@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Institutional Stock Analyst Prompt</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0b;
+      --surface: #111114;
+      --border: #1e1e24;
+      --accent: #c8f135;
+      --accent-dim: rgba(200,241,53,0.12);
+      --accent-dim2: rgba(200,241,53,0.06);
+      --text: #e8e8ec;
+      --text-muted: #6b6b7a;
+      --text-dim: #4a4a58;
+      --red: #ff4d4d;
+      --green: #c8f135;
+      --mono: 'IBM Plex Mono', monospace;
+      --serif: 'Instrument Serif', Georgia, serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      border: 1.5px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .logo-text {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .header-tag {
+      font-size: 10px;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 3px 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 72px 0 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-label::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(36px, 6vw, 60px);
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--text);
+      margin-bottom: 16px;
+      max-width: 700px;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero p {
+      color: var(--text-muted);
+      max-width: 560px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    /* Ticker Input */
+    .input-section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .input-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .ticker-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 20px 24px;
+      text-transform: uppercase;
+      outline: none;
+      transition: border-color 0.2s;
+      max-width: 260px;
+    }
+
+    .ticker-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .ticker-input:focus {
+      border-color: var(--accent);
+    }
+
+    .mode-selector {
+      display: flex;
+      gap: 0;
+    }
+
+    .mode-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .mode-btn:first-child { border-right: none; }
+
+    .mode-btn:hover {
+      color: var(--text);
+      background: var(--border);
+    }
+
+    .mode-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .copy-btn {
+      background: var(--accent);
+      border: none;
+      color: #0a0a0b;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0 32px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .copy-btn:hover {
+      background: #d8ff45;
+    }
+
+    .copy-btn.copied {
+      background: #2a3a0a;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    /* LLM Buttons */
+    .llm-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .llm-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 8px 14px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+
+    .llm-btn:hover {
+      border-color: var(--text-muted);
+      color: var(--text);
+    }
+
+    .llm-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    /* Prompt Preview */
+    .prompt-section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .prompt-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 24px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      max-height: 320px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      position: relative;
+    }
+
+    .prompt-box .ticker-highlight {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .prompt-box::-webkit-scrollbar { width: 4px; }
+    .prompt-box::-webkit-scrollbar-track { background: var(--surface); }
+    .prompt-box::-webkit-scrollbar-thumb { background: var(--border); }
+
+    /* What it covers */
+    .covers-section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .covers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 24px;
+    }
+
+    .cover-item {
+      background: var(--bg);
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .cover-num {
+      font-size: 10px;
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .cover-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* How to use */
+    .steps-section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 24px;
+    }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    .step:last-child { border-bottom: none; }
+
+    .step-num {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 700;
+      flex-shrink: 0;
+      width: 24px;
+      margin-top: 2px;
+    }
+
+    .step-content strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .step-content p {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .step-content code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      color: var(--accent);
+      font-size: 11px;
+    }
+
+    /* Footer */
+    footer {
+      padding: 32px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-text {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .footer-links a {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--accent);
+      color: #0a0a0b;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 12px 20px;
+      text-transform: uppercase;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 9999;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Blink cursor */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--accent);
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+      margin-left: 2px;
+    }
+
+    @media (max-width: 600px) {
+      .input-row { flex-direction: column; }
+      .ticker-input { max-width: 100%; font-size: 22px; }
+      .mode-selector { flex-direction: row; }
+      .mode-btn { flex: 1; text-align: center; }
+      .copy-btn { padding: 16px; }
+      .hero h1 { font-size: 32px; }
+      .header-tag { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">Σ</div>
+        <span class="logo-text">Institutional Analyst Prompt</span>
+      </div>
+      <span class="header-tag">v2.0 — Free & Open Source</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <div class="hero-label">The framework behind "do your own research"</div>
+      <h1>Stop watching. <em>Start analyzing.</em></h1>
+      <p>
+        Every stock influencer ends with "DYOR." This is the actual research framework — institutional-grade, 
+        10 sections deep, covering fundamentals, technicals, flow, sentiment, and a full trading plan. 
+        Paste it into any AI with web search. Replace the ticker. That's it.
+      </p>
+    </div>
+  </section>
+
+  <section class="input-section">
+    <div class="container">
+      <div class="input-label">// Enter your ticker symbol</div>
+      <div class="input-row">
+        <input 
+          type="text" 
+          class="ticker-input" 
+          id="tickerInput"
+          placeholder="NVDA" 
+          maxlength="10"
+          spellcheck="false"
+          autocomplete="off"
+        >
+        <div class="mode-selector">
+          <button class="mode-btn active" id="btnFull" onclick="setMode('full')">Full</button>
+          <button class="mode-btn" id="btnLite" onclick="setMode('lite')">Lite</button>
+        </div>
+        <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">
+          Copy Prompt
+        </button>
+      </div>
+
+      <div class="llm-row">
+        <span style="font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;align-self:center;">Open in →</span>
+        <a href="https://claude.ai" target="_blank" class="llm-btn">
+          <span class="llm-dot" style="background:#cc7a2a;"></span>Claude (Recommended)
+        </a>
+        <a href="https://chatgpt.com" target="_blank" class="llm-btn">
+          <span class="llm-dot" style="background:#74aa9c;"></span>ChatGPT
+        </a>
+        <a href="https://gemini.google.com" target="_blank" class="llm-btn">
+          <span class="llm-dot" style="background:#4285f4;"></span>Gemini
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="prompt-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-title">// Prompt Preview</span>
+        <span style="font-size:10px;color:var(--text-dim);" id="modeLabel">FULL MODE — 10 SECTIONS</span>
+      </div>
+      <div class="prompt-box" id="promptPreview"></div>
+    </div>
+  </section>
+
+  <section class="covers-section">
+    <div class="container">
+      <div class="section-title">// What the prompt covers</div>
+      <div class="covers-grid">
+        <div class="cover-item"><span class="cover-num">01</span><span class="cover-label">Live data retrieval (price, earnings, news)</span></div>
+        <div class="cover-item"><span class="cover-num">02</span><span class="cover-label">Business thesis & revenue model</span></div>
+        <div class="cover-item"><span class="cover-num">03</span><span class="cover-label">Auto peer discovery & comparison</span></div>
+        <div class="cover-item"><span class="cover-num">04</span><span class="cover-label">Deep fundamental research</span></div>
+        <div class="cover-item"><span class="cover-num">05</span><span class="cover-label">Competitive positioning & moat analysis</span></div>
+        <div class="cover-item"><span class="cover-num">06</span><span class="cover-label">Macro & risk layer</span></div>
+        <div class="cover-item"><span class="cover-num">07</span><span class="cover-label">Technical analysis (EMAs, RSI, MACD)</span></div>
+        <div class="cover-item"><span class="cover-num">08</span><span class="cover-label">Options flow & dark pool</span></div>
+        <div class="cover-item"><span class="cover-num">09</span><span class="cover-label">Sentiment & crowding risk</span></div>
+        <div class="cover-item"><span class="cover-num">10</span><span class="cover-label">Full trading plan with R/R & conviction score</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="steps-section">
+    <div class="container">
+      <div class="section-title">// How to use</div>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <div class="step-content">
+            <strong>Enter your ticker above</strong>
+            <p>Type any stock symbol. The prompt auto-fills with your ticker.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <div class="step-content">
+            <strong>Choose Full or Lite mode</strong>
+            <p>Full = comprehensive 10-section institutional analysis. Lite = fast 8-point scan for quick decisions.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <div class="step-content">
+            <strong>Click "Copy Prompt"</strong>
+            <p>The complete prompt is copied to your clipboard, ready to paste.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">04</span>
+          <div class="step-content">
+            <strong>Open an AI with web search enabled</strong>
+            <p><code>Claude</code> (recommended), <code>ChatGPT</code>, or <code>Gemini</code>. Enable search — critical for live data.</p>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">05</span>
+          <div class="step-content">
+            <strong>Paste and run</strong>
+            <p>Wait 2–5 minutes. Expect a detailed, structured analysis covering all 10 sections.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;width:100%;">
+    <span class="footer-text">MIT License — Free to use, share, and modify</span>
+    <div class="footer-links">
+      <a href="https://github.com" target="_blank">GitHub</a>
+      <a href="prompts/STOCK_ANALYSIS_PROMPT.md">Prompt File</a>
+      <a href="docs/BACKTEST_METHODOLOGY.md">Backtest Guide</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast">✓ Prompt copied to clipboard</div>
+
+<script>
+  const FULL_PROMPT = `You are an institutional-level equity research analyst, technical strategist, and market structure specialist with access to real-time search capability.
+
+Analyze the stock: TICKER_PLACEHOLDER
+
+## ROLE & BEHAVIOR
+- Think like a hedge fund analyst preparing an internal brief — not a content creator
+- Use web search to retrieve the latest price, earnings, filings, news, and analyst data
+- Be brutally honest: if the thesis is weak, say so
+- No disclaimers. No beginner explanations. No filler. Signal only.
+- If confidence is low on a data point, flag it as [LOW CONFIDENCE]
+- Format: concise bullets only. Max 2-3 lines per sub-section.
+
+---
+
+## STEP 1 — LIVE DATA RETRIEVAL (Search First)
+Before any analysis, search and retrieve:
+- Current price, 52-week high/low, market cap
+- Most recent earnings (date, EPS beat/miss, revenue beat/miss)
+- Latest guidance (raised / lowered / maintained)
+- Most recent analyst actions — last 30 days (upgrades, downgrades, price target changes)
+- Any material news in the last 14 days
+- Insider transactions — last 90 days
+- Institutional ownership change — last quarter
+
+Do not proceed to analysis until this data is retrieved.
+
+---
+
+## STEP 2 — COMPANY & BUSINESS THESIS
+- Business model in one sentence
+- Primary revenue drivers and mix
+- AI / cloud / software / hardware exposure — is it real or narrative?
+- TAM: expanding, contracting, or oversaturated?
+- Operating leverage verdict
+- Valuation verdict: justified by fundamentals or priced on hope?
+- One-line thesis: Bull or Bear — be direct
+
+---
+
+## STEP 3 — AUTOMATIC PEER DISCOVERY & COMPARISON
+Auto-identify: direct competitors, indirect competitors, sector leaders, emerging disruptors, open-source threats, hyperscaler threats.
+
+Compare each peer on: revenue growth, gross margin, operating margin, EPS growth, FCF yield, forward P/E, PEG, EV/Sales, market share direction, moat durability.
+
+Verdict: Is TICKER_PLACEHOLDER the best risk-adjusted play in its peer group?
+
+---
+
+## STEP 4 — DEEP FUNDAMENTAL RESEARCH
+Earnings Quality: transcript highlights, revenue quality, beat/miss pattern (last 4 quarters), guidance credibility.
+Balance Sheet: cash position, debt maturities, SBC as % of revenue, buybacks, capex trend.
+Risk Flags: customer concentration, accounting red flags, AI capex dependency.
+Regulatory: antitrust exposure, litigation, China/export control risk, data privacy risk.
+
+---
+
+## STEP 5 — COMPETITIVE POSITIONING
+Answer each directly:
+- Is the moat widening or narrowing?
+- Is the product becoming commoditized?
+- Can open-source replicate the core product within 2 years?
+- Could AWS/Azure/GCP kill margins?
+- Who is the most dangerous competitor right now?
+- What KPI matters most going forward?
+- What is management NOT discussing?
+
+---
+
+## STEP 6 — MACRO & RISK LAYER
+Rate each (High/Medium/Low): interest rate risk, recession sensitivity, FX exposure, China exposure, tariff risk, semiconductor cycle, AI capex cycle risk, liquidity risk.
+Identify the single biggest non-obvious macro risk.
+
+---
+
+## STEP 7 — TECHNICAL ANALYSIS
+Trend: price vs. 21 EMA, 34 EMA, 50 SMA, 200 SMA. Higher highs/lows structure.
+Momentum: RSI (overbought/oversold/divergence), MACD crossover, relative strength vs. sector ETF.
+Levels: key support zones, key resistance zones, liquidity pools, gap analysis.
+Verdict: Overextended (wait) or healthy pullback (act)? Optimal entry zone?
+
+---
+
+## STEP 8 — OPTIONS & FLOW ANALYSIS
+Search for current options data: unusual sweeps, put/call ratio, IV rank, gamma exposure, dark pool prints, smart money flow direction.
+Trade structure recommendation: shares / calls / spreads / puts — and why.
+
+---
+
+## STEP 9 — SENTIMENT ANALYSIS
+- Retail sentiment: euphoric / neutral / fearful
+- Wall Street consensus: bullish / mixed / bearish, and is it shifting?
+- Crowding risk: consensus long — what happens if it unwinds?
+- Narrative saturation: is the core thesis already fully priced in?
+- Short interest: % float short and trend
+
+---
+
+## STEP 10 — TRADING PLAN & FINAL SUMMARY
+
+Trading Plan:
+- Bias: Bullish / Neutral / Bearish
+- Entry zone | Pullback zone | Stop-loss | T1 | T2 | T3
+- Risk/Reward | Swing trade probability | Long-term grade (A/B/C/D)
+
+Final Summary (bullets only):
+- Bull case (3 max) | Bear case (3 max)
+- Hidden risk (1-2 non-obvious) | Key catalyst (next 30-90 days)
+- Best entry (price + trigger) | Pullback zone | Resistance levels (top 3) | Support levels (top 3)
+- Breakout probability | 3-month outlook | 1-year outlook
+- Conviction score X/10 (with one-line reason)
+- Best risk-adjusted strategy | Thesis invalidation
+
+Concise bullets only. No disclaimers. No filler. Think hedge fund analyst.`;
+
+  const LITE_PROMPT = `Act as an institutional equity analyst with web search. Analyze TICKER_PLACEHOLDER:
+
+1. RETRIEVE LIVE DATA: current price, earnings beat/miss, guidance, analyst actions (last 30 days), material news (last 14 days), insider transactions, institutional ownership change.
+
+2. THESIS: Business model, revenue drivers, AI/cloud exposure, TAM, valuation verdict — bull or bear in one sentence.
+
+3. PEERS: Auto-identify top 3 competitors. Compare revenue growth, gross margin, FCF, forward P/E. Is TICKER_PLACEHOLDER the best play in the group?
+
+4. FUNDAMENTALS: Earnings quality, SBC/dilution, balance sheet, customer concentration, red flags.
+
+5. TECHNICALS: Price vs 21/50/200 EMAs. RSI, MACD, relative strength. Key support/resistance. Overextended or entry opportunity?
+
+6. OPTIONS FLOW: Unusual activity, IV rank, put/call ratio, smart money signal.
+
+7. TRADING PLAN:
+   - Bias: Bullish / Neutral / Bearish
+   - Entry: $X | Pullback zone: $X | Stop: $X | T1: $X | T2: $X | R/R: X:1
+
+8. FINAL:
+   - Bull case (2 bullets) | Bear case (2 bullets) | Hidden risk | Key catalyst
+   - 3-month outlook | 1-year outlook | Conviction: X/10
+   - Best strategy | Thesis invalidation
+
+Concise bullets only. No disclaimers. No filler. Think hedge fund analyst.`;
+
+  let currentMode = 'full';
+  let ticker = '';
+
+  function getPrompt() {
+    const t = ticker.trim().toUpperCase() || 'YOUR_TICKER';
+    const base = currentMode === 'full' ? FULL_PROMPT : LITE_PROMPT;
+    return base.replaceAll('TICKER_PLACEHOLDER', t);
+  }
+
+  function updatePreview() {
+    const preview = document.getElementById('promptPreview');
+    const t = ticker.trim().toUpperCase() || 'YOUR_TICKER';
+    const base = currentMode === 'full' ? FULL_PROMPT : LITE_PROMPT;
+    // Highlight ticker in preview
+    const escaped = base.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const highlighted = escaped.replaceAll('TICKER_PLACEHOLDER', 
+      `<span class="ticker-highlight">${t}</span>`
+    );
+    preview.innerHTML = highlighted;
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('btnFull').classList.toggle('active', mode === 'full');
+    document.getElementById('btnLite').classList.toggle('active', mode === 'lite');
+    document.getElementById('modeLabel').textContent = 
+      mode === 'full' ? 'FULL MODE — 10 SECTIONS' : 'LITE MODE — 8 SECTIONS';
+    updatePreview();
+  }
+
+  function copyPrompt() {
+    const prompt = getPrompt();
+    navigator.clipboard.writeText(prompt).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy Prompt';
+        btn.classList.remove('copied');
+      }, 2000);
+      showToast();
+    });
+  }
+
+  function showToast() {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  document.getElementById('tickerInput').addEventListener('input', function() {
+    ticker = this.value;
+    updatePreview();
+  });
+
+  // Initialize
+  updatePreview();
+</script>
+
+</body>
+</html>
