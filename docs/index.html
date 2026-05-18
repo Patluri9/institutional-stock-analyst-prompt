@@ -3,29 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Institutional Stock Analyst Prompt</title>
+  <title>AI Financial Research Hub — Institutional-Grade Analysis Prompts</title>
+  <meta name="description" content="Free institutional-grade AI prompts for stock analysis, dividend investing, retirement planning, growth investing, and more. One-stop financial research hub.">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg: #0a0a0b;
       --surface: #111114;
+      --surface2: #16161a;
       --border: #1e1e24;
+      --border2: #28282f;
       --accent: #c8f135;
       --accent-dim: rgba(200,241,53,0.12);
-      --accent-dim2: rgba(200,241,53,0.06);
+      --accent-dim2: rgba(200,241,53,0.05);
+      --blue: #4ea8ff;
+      --blue-dim: rgba(78,168,255,0.1);
+      --purple: #b49fff;
+      --purple-dim: rgba(180,159,255,0.1);
+      --orange: #ff9f4a;
+      --orange-dim: rgba(255,159,74,0.1);
+      --teal: #4affcb;
+      --teal-dim: rgba(74,255,203,0.1);
+      --red: #ff5555;
+      --red-dim: rgba(255,85,85,0.1);
+      --gold: #ffd700;
+      --gold-dim: rgba(255,215,0,0.1);
       --text: #e8e8ec;
       --text-muted: #6b6b7a;
-      --text-dim: #4a4a58;
-      --red: #ff4d4d;
-      --green: #c8f135;
+      --text-dim: #3a3a48;
       --mono: 'IBM Plex Mono', monospace;
       --serif: 'Instrument Serif', Georgia, serif;
     }
-
     html { scroll-behavior: smooth; }
-
     body {
       background: var(--bg);
       color: var(--text);
@@ -35,470 +45,182 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
-
-    /* Scanline overlay */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.03) 2px,
-        rgba(0,0,0,0.03) 4px
-      );
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px);
       pointer-events: none;
-      z-index: 1000;
+      z-index: 999;
     }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
+    /* HEADER */
+    header { border-bottom: 1px solid var(--border); padding: 18px 0; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 34px; height: 34px; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 16px; font-weight: 700; flex-shrink: 0; }
+    .logo-text { font-size: 11px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+    .header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge { font-size: 10px; letter-spacing: 0.08em; padding: 3px 8px; border: 1px solid; text-transform: uppercase; }
+    .badge-green { color: var(--accent); border-color: var(--accent); }
+    .badge-blue { color: var(--blue); border-color: var(--blue); }
 
-    /* Header */
-    header {
-      border-bottom: 1px solid var(--border);
-      padding: 20px 0;
-    }
+    /* HERO */
+    .hero { padding: 60px 0 40px; border-bottom: 1px solid var(--border); }
+    .hero-eyebrow { font-size: 10px; letter-spacing: 0.2em; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .hero-eyebrow::before { content: ''; display: block; width: 24px; height: 1px; background: var(--accent); }
+    .hero h1 { font-family: var(--serif); font-size: clamp(32px, 5.5vw, 56px); font-weight: 400; line-height: 1.1; margin-bottom: 14px; max-width: 720px; }
+    .hero h1 em { font-style: italic; color: var(--accent); }
+    .hero-sub { color: var(--text-muted); max-width: 580px; font-size: 13px; line-height: 1.75; }
 
-    .header-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
+    /* GURU QUOTE TICKER */
+    .quote-bar { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 14px 0; margin: 0; overflow: hidden; }
+    .quote-inner { display: flex; align-items: flex-start; gap: 16px; }
+    .quote-label { font-size: 10px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; padding-top: 1px; }
+    .quote-text { font-family: var(--serif); font-size: 15px; color: var(--text); font-style: italic; line-height: 1.5; }
+    .quote-author { font-size: 11px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.05em; }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    /* MODE SELECTOR */
+    .mode-section { padding: 48px 0 0; }
+    .section-label { font-size: 10px; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 20px; }
+    .mode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 32px; }
+    .mode-card { background: var(--surface); border: 1px solid var(--border); padding: 16px; cursor: pointer; transition: all 0.15s; position: relative; }
+    .mode-card:hover { border-color: var(--border2); background: var(--surface2); }
+    .mode-card.active { border-color: var(--active-color, var(--accent)); background: var(--active-bg, var(--accent-dim)); }
+    .mode-card .mode-icon { font-size: 18px; margin-bottom: 8px; }
+    .mode-card .mode-name { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .mode-card .mode-desc { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+    .mode-card.active .mode-name { color: var(--active-color, var(--accent)); }
 
-    .logo-icon {
-      width: 32px;
-      height: 32px;
-      border: 1.5px solid var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--accent);
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .logo-text {
-      font-size: 11px;
-      color: var(--text-muted);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-    }
-
-    .header-tag {
-      font-size: 10px;
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      padding: 3px 8px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    /* Hero */
-    .hero {
-      padding: 72px 0 48px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .hero-label {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      color: var(--accent);
-      text-transform: uppercase;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .hero-label::before {
-      content: '';
-      display: block;
-      width: 24px;
-      height: 1px;
-      background: var(--accent);
-    }
-
-    .hero h1 {
-      font-family: var(--serif);
-      font-size: clamp(36px, 6vw, 60px);
-      font-weight: 400;
-      line-height: 1.1;
-      color: var(--text);
-      margin-bottom: 16px;
-      max-width: 700px;
-    }
-
-    .hero h1 em {
-      font-style: italic;
-      color: var(--accent);
-    }
-
-    .hero p {
-      color: var(--text-muted);
-      max-width: 560px;
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
-    /* Ticker Input */
-    .input-section {
-      padding: 48px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .input-label {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 12px;
-      align-items: stretch;
-    }
-
-    .ticker-input {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      padding: 20px 24px;
-      text-transform: uppercase;
-      outline: none;
+    /* INPUT AREA */
+    .input-section { padding: 0 0 32px; border-bottom: 1px solid var(--border); }
+    .input-context { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+    .input-context span { color: var(--active-color, var(--accent)); }
+    .input-row { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+    .main-input {
+      flex: 1; min-width: 180px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); font-family: var(--mono);
+      font-size: 22px; font-weight: 700; letter-spacing: 0.08em;
+      padding: 16px 20px; text-transform: uppercase; outline: none;
       transition: border-color 0.2s;
-      max-width: 260px;
     }
-
-    .ticker-input::placeholder {
-      color: var(--text-dim);
+    .main-input::placeholder { color: var(--text-dim); font-size: 16px; font-weight: 400; text-transform: none; letter-spacing: 0; }
+    .main-input:focus { border-color: var(--active-color, var(--accent)); }
+    .depth-selector { display: flex; }
+    .depth-btn {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-muted); font-family: var(--mono);
+      font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0 16px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
     }
-
-    .ticker-input:focus {
-      border-color: var(--accent);
-    }
-
-    .mode-selector {
-      display: flex;
-      gap: 0;
-    }
-
-    .mode-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 0 20px;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-
-    .mode-btn:first-child { border-right: none; }
-
-    .mode-btn:hover {
-      color: var(--text);
-      background: var(--border);
-    }
-
-    .mode-btn.active {
-      background: var(--accent-dim);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
+    .depth-btn:first-child { border-right: none; }
+    .depth-btn:hover { color: var(--text); background: var(--border); }
+    .depth-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
     .copy-btn {
-      background: var(--accent);
-      border: none;
-      color: #0a0a0b;
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 0 32px;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
+      background: var(--accent); border: none;
+      color: #0a0a0b; font-family: var(--mono);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 0 28px; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap; min-height: 56px;
     }
-
-    .copy-btn:hover {
-      background: #d8ff45;
-    }
-
-    .copy-btn.copied {
-      background: #2a3a0a;
-      color: var(--accent);
-      border: 1px solid var(--accent);
-    }
-
-    /* LLM Buttons */
-    .llm-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
-
+    .copy-btn:hover { background: #d8ff45; }
+    .copy-btn.copied { background: #1a2a06; color: var(--accent); border: 1px solid var(--accent); }
+    .llm-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+    .llm-label { font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; }
     .llm-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      padding: 8px 14px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.15s;
-      text-transform: uppercase;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.08em; padding: 7px 12px; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center;
+      gap: 5px; transition: all 0.15s; text-transform: uppercase;
     }
+    .llm-btn:hover { border-color: var(--text-muted); color: var(--text); }
+    .llm-dot { width: 5px; height: 5px; border-radius: 50%; }
 
-    .llm-btn:hover {
-      border-color: var(--text-muted);
-      color: var(--text);
-    }
-
-    .llm-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-    }
-
-    /* Prompt Preview */
-    .prompt-section {
-      padding: 48px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .section-title {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
+    /* PROMPT PREVIEW */
+    .preview-section { padding: 32px 0; border-bottom: 1px solid var(--border); }
+    .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .preview-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; }
+    .preview-meta { font-size: 10px; color: var(--text-dim); }
     .prompt-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 24px;
-      font-size: 12px;
-      line-height: 1.7;
-      color: var(--text-muted);
-      max-height: 320px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      position: relative;
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 20px; font-size: 11.5px; line-height: 1.7;
+      color: var(--text-muted); max-height: 260px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-word;
     }
+    .prompt-box .hi { color: var(--accent); font-weight: 700; }
+    .prompt-box::-webkit-scrollbar { width: 3px; }
+    .prompt-box::-webkit-scrollbar-thumb { background: var(--border2); }
 
-    .prompt-box .ticker-highlight {
-      color: var(--accent);
-      font-weight: 700;
-    }
+    /* COVERAGE GRID */
+    .coverage-section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+    .coverage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-top: 20px; }
+    .cov-item { background: var(--bg); padding: 14px 18px; display: flex; gap: 10px; align-items: flex-start; }
+    .cov-num { font-size: 10px; color: var(--accent); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .cov-text { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
 
-    .prompt-box::-webkit-scrollbar { width: 4px; }
-    .prompt-box::-webkit-scrollbar-track { background: var(--surface); }
-    .prompt-box::-webkit-scrollbar-thumb { background: var(--border); }
-
-    /* What it covers */
-    .covers-section {
-      padding: 48px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .covers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border);
-      margin-top: 24px;
-    }
-
-    .cover-item {
-      background: var(--bg);
-      padding: 16px 20px;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-
-    .cover-num {
-      font-size: 10px;
-      color: var(--accent);
-      font-weight: 700;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-    .cover-label {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* How to use */
-    .steps-section {
-      padding: 48px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .steps {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      margin-top: 24px;
-    }
-
-    .step {
-      display: flex;
-      gap: 24px;
-      padding: 20px 0;
-      border-bottom: 1px solid var(--border);
-      align-items: flex-start;
-    }
-
+    /* HOW TO */
+    .howto-section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+    .steps { display: flex; flex-direction: column; margin-top: 20px; }
+    .step { display: flex; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
     .step:last-child { border-bottom: none; }
+    .step-num { font-size: 10px; color: var(--accent); font-weight: 700; flex-shrink: 0; width: 20px; margin-top: 2px; }
+    .step strong { display: block; color: var(--text); margin-bottom: 3px; font-size: 12px; }
+    .step p { color: var(--text-muted); font-size: 11.5px; }
+    .step code { background: var(--surface); border: 1px solid var(--border); padding: 1px 5px; color: var(--accent); font-size: 10.5px; }
 
-    .step-num {
-      font-size: 11px;
-      color: var(--accent);
-      font-weight: 700;
-      flex-shrink: 0;
-      width: 24px;
-      margin-top: 2px;
-    }
+    /* NEWS SECTION */
+    .news-section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+    .news-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+    .news-refresh { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 12px; cursor: pointer; transition: all 0.15s; }
+    .news-refresh:hover { border-color: var(--accent); color: var(--accent); }
+    .news-grid { display: flex; flex-direction: column; gap: 0; }
+    .news-item { border-bottom: 1px solid var(--border); padding: 14px 0; display: flex; gap: 14px; align-items: flex-start; transition: background 0.1s; }
+    .news-item:last-child { border-bottom: none; }
+    .news-item:hover { background: var(--surface2); padding-left: 8px; margin-left: -8px; padding-right: 8px; }
+    .news-num { font-size: 10px; color: var(--text-dim); flex-shrink: 0; width: 20px; margin-top: 2px; }
+    .news-content { flex: 1; min-width: 0; }
+    .news-title { font-size: 13px; color: var(--text); line-height: 1.4; margin-bottom: 4px; text-decoration: none; display: block; }
+    .news-title:hover { color: var(--accent); }
+    .news-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .news-source { font-size: 10px; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; }
+    .news-time { font-size: 10px; color: var(--text-dim); }
+    .news-tag { font-size: 9px; padding: 2px 6px; border: 1px solid; letter-spacing: 0.05em; text-transform: uppercase; }
+    .tag-bull { color: #4ade80; border-color: #4ade80; }
+    .tag-bear { color: var(--red); border-color: var(--red); }
+    .tag-neutral { color: var(--text-dim); border-color: var(--text-dim); }
+    .news-loading { text-align: center; padding: 40px; color: var(--text-dim); font-size: 12px; letter-spacing: 0.1em; }
 
-    .step-content strong {
-      display: block;
-      color: var(--text);
-      margin-bottom: 4px;
-      font-size: 13px;
-    }
+    /* QUOTES SECTION */
+    .quotes-section { padding: 48px 0; border-bottom: 1px solid var(--border); }
+    .quotes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+    .quote-card { background: var(--surface); border: 1px solid var(--border); padding: 24px; position: relative; transition: border-color 0.2s; }
+    .quote-card:hover { border-color: var(--border2); }
+    .quote-card::before { content: '"'; font-family: var(--serif); font-size: 60px; color: var(--accent); opacity: 0.15; position: absolute; top: 8px; left: 16px; line-height: 1; }
+    .quote-card-text { font-family: var(--serif); font-size: 14px; font-style: italic; color: var(--text); line-height: 1.6; margin-bottom: 14px; padding-top: 8px; }
+    .quote-card-author { font-size: 10px; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; }
+    .quote-card-title { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 
-    .step-content p {
-      color: var(--text-muted);
-      font-size: 12px;
-    }
-
-    .step-content code {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 1px 6px;
-      color: var(--accent);
-      font-size: 11px;
-    }
-
-    /* Footer */
-    footer {
-      padding: 32px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .footer-text {
-      font-size: 11px;
-      color: var(--text-dim);
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 16px;
-    }
-
-    .footer-links a {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      transition: color 0.15s;
-    }
-
+    /* FOOTER */
+    footer { padding: 28px 0; border-top: 1px solid var(--border); }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .footer-text { font-size: 10px; color: var(--text-dim); }
+    .footer-links { display: flex; gap: 14px; flex-wrap: wrap; }
+    .footer-links a { font-size: 10px; color: var(--text-muted); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.15s; }
     .footer-links a:hover { color: var(--accent); }
 
-    /* Toast */
-    .toast {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      background: var(--accent);
-      color: #0a0a0b;
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      padding: 12px 20px;
-      text-transform: uppercase;
-      transform: translateY(80px);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      z-index: 9999;
-    }
-
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    /* Blink cursor */
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-
-    .cursor {
-      display: inline-block;
-      width: 2px;
-      height: 1em;
-      background: var(--accent);
-      vertical-align: middle;
-      animation: blink 1s step-end infinite;
-      margin-left: 2px;
-    }
+    /* TOAST */
+    .toast { position: fixed; bottom: 28px; right: 28px; background: var(--accent); color: #0a0a0b; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; padding: 10px 18px; text-transform: uppercase; transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 9999; }
+    .toast.show { transform: translateY(0); opacity: 1; }
 
     @media (max-width: 600px) {
       .input-row { flex-direction: column; }
-      .ticker-input { max-width: 100%; font-size: 22px; }
-      .mode-selector { flex-direction: row; }
-      .mode-btn { flex: 1; text-align: center; }
-      .copy-btn { padding: 16px; }
-      .hero h1 { font-size: 32px; }
-      .header-tag { display: none; }
+      .copy-btn { min-height: 48px; padding: 14px; }
+      .hero h1 { font-size: 28px; }
+      .header-badges { display: none; }
+      .depth-selector { flex-direction: row; }
     }
   </style>
 </head>
@@ -509,142 +231,176 @@
     <div class="header-inner">
       <div class="logo">
         <div class="logo-icon">Σ</div>
-        <span class="logo-text">Institutional Analyst Prompt</span>
+        <span class="logo-text">AI Financial Research Hub</span>
       </div>
-      <span class="header-tag">v2.0 — Free & Open Source</span>
+      <div class="header-badges">
+        <span class="badge badge-green">Free & Open Source</span>
+        <span class="badge badge-blue">7 Research Modes</span>
+      </div>
     </div>
   </div>
 </header>
 
+<!-- Rotating Guru Quote Bar -->
+<div class="quote-bar" id="quoteBar">
+  <div class="container">
+    <div class="quote-inner">
+      <span class="quote-label">💡 Today's Wisdom</span>
+      <div>
+        <div class="quote-text" id="heroQuoteText">Loading...</div>
+        <div class="quote-author" id="heroQuoteAuthor"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <main>
   <section class="hero">
     <div class="container">
-      <div class="hero-label">The framework behind "do your own research"</div>
-      <h1>Stop watching. <em>Start analyzing.</em></h1>
-      <p>
-        Every stock influencer ends with "DYOR." This is the actual research framework — institutional-grade, 
-        10 sections deep, covering fundamentals, technicals, flow, sentiment, and a full trading plan. 
-        Paste it into any AI with web search. Replace the ticker. That's it.
-      </p>
+      <div class="hero-eyebrow">The framework behind "do your own research"</div>
+      <h1>One hub. <em>Every strategy.</em> Zero fluff.</h1>
+      <p class="hero-sub">7 institutional-grade research prompts covering stocks, dividends, retirement, growth investing, ETFs, options, and custom screens. Paste into any AI. Replace the input. Get professional-level analysis in minutes.</p>
     </div>
   </section>
 
-  <section class="input-section">
+  <!-- MODE SELECTOR -->
+  <section class="mode-section">
     <div class="container">
-      <div class="input-label">// Enter your ticker symbol</div>
-      <div class="input-row">
-        <input 
-          type="text" 
-          class="ticker-input" 
-          id="tickerInput"
-          placeholder="NVDA" 
-          maxlength="10"
-          spellcheck="false"
-          autocomplete="off"
-        >
-        <div class="mode-selector">
-          <button class="mode-btn active" id="btnFull" onclick="setMode('full')">Full</button>
-          <button class="mode-btn" id="btnLite" onclick="setMode('lite')">Lite</button>
+      <div class="section-label">// Choose your research mode</div>
+      <div class="mode-grid" id="modeGrid">
+        <div class="mode-card active" data-mode="stock" style="--active-color: #c8f135; --active-bg: rgba(200,241,53,0.1);" onclick="selectMode('stock')">
+          <div class="mode-icon">📊</div>
+          <div class="mode-name">Stock Analysis</div>
+          <div class="mode-desc">Deep institutional-grade equity research</div>
         </div>
-        <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">
-          Copy Prompt
-        </button>
+        <div class="mode-card" data-mode="dividend" style="--active-color: #4ea8ff; --active-bg: rgba(78,168,255,0.1);" onclick="selectMode('dividend')">
+          <div class="mode-icon">💰</div>
+          <div class="mode-name">Dividend Investing</div>
+          <div class="mode-desc">Income, yield quality & payout sustainability</div>
+        </div>
+        <div class="mode-card" data-mode="retirement" style="--active-color: #b49fff; --active-bg: rgba(180,159,255,0.1);" onclick="selectMode('retirement')">
+          <div class="mode-icon">🏦</div>
+          <div class="mode-name">Retirement Planning</div>
+          <div class="mode-desc">Portfolio build for long-term wealth</div>
+        </div>
+        <div class="mode-card" data-mode="growth" style="--active-color: #4affcb; --active-bg: rgba(74,255,203,0.1);" onclick="selectMode('growth')">
+          <div class="mode-icon">🚀</div>
+          <div class="mode-name">Growth Investing</div>
+          <div class="mode-desc">High-conviction growth + risk tolerance</div>
+        </div>
+        <div class="mode-card" data-mode="etf" style="--active-color: #ff9f4a; --active-bg: rgba(255,159,74,0.1);" onclick="selectMode('etf')">
+          <div class="mode-icon">🗂️</div>
+          <div class="mode-name">ETF & Index</div>
+          <div class="mode-desc">Fund comparison, overlap & allocation</div>
+        </div>
+        <div class="mode-card" data-mode="options" style="--active-color: #ff5555; --active-bg: rgba(255,85,85,0.1);" onclick="selectMode('options')">
+          <div class="mode-icon">⚡</div>
+          <div class="mode-name">Options Strategy</div>
+          <div class="mode-desc">Covered calls, spreads, flow analysis</div>
+        </div>
+        <div class="mode-card" data-mode="screen" style="--active-color: #ffd700; --active-bg: rgba(255,215,0,0.1);" onclick="selectMode('screen')">
+          <div class="mode-icon">🔍</div>
+          <div class="mode-name">Custom Screen</div>
+          <div class="mode-desc">Describe any strategy or niche</div>
+        </div>
       </div>
 
-      <div class="llm-row">
-        <span style="font-size:10px;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;align-self:center;">Open in →</span>
-        <a href="https://claude.ai" target="_blank" class="llm-btn">
-          <span class="llm-dot" style="background:#cc7a2a;"></span>Claude (Recommended)
-        </a>
-        <a href="https://chatgpt.com" target="_blank" class="llm-btn">
-          <span class="llm-dot" style="background:#74aa9c;"></span>ChatGPT
-        </a>
-        <a href="https://gemini.google.com" target="_blank" class="llm-btn">
-          <span class="llm-dot" style="background:#4285f4;"></span>Gemini
-        </a>
+      <!-- INPUT AREA -->
+      <div class="input-section">
+        <div class="input-context">// <span id="inputContextText">Enter ticker symbol (e.g. NVDA, AAPL, TSLA)</span></div>
+        <div class="input-row">
+          <input type="text" class="main-input" id="mainInput" placeholder="NVDA" maxlength="120" spellcheck="false" autocomplete="off">
+          <div class="depth-selector">
+            <button class="depth-btn active" id="btnFull" onclick="setDepth('full')">Full</button>
+            <button class="depth-btn" id="btnLite" onclick="setDepth('lite')">Lite</button>
+          </div>
+          <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy Prompt</button>
+        </div>
+        <div class="llm-row">
+          <span class="llm-label">Open in →</span>
+          <a href="https://claude.ai" target="_blank" class="llm-btn"><span class="llm-dot" style="background:#cc7a2a;"></span>Claude</a>
+          <a href="https://chatgpt.com" target="_blank" class="llm-btn"><span class="llm-dot" style="background:#74aa9c;"></span>ChatGPT</a>
+          <a href="https://gemini.google.com" target="_blank" class="llm-btn"><span class="llm-dot" style="background:#4285f4;"></span>Gemini</a>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="prompt-section">
+  <!-- PROMPT PREVIEW -->
+  <section class="preview-section">
     <div class="container">
-      <div class="section-header">
-        <span class="section-title">// Prompt Preview</span>
-        <span style="font-size:10px;color:var(--text-dim);" id="modeLabel">FULL MODE — 10 SECTIONS</span>
+      <div class="preview-header">
+        <span class="preview-label">// Prompt Preview</span>
+        <span class="preview-meta" id="previewMeta">FULL — 10 SECTIONS</span>
       </div>
       <div class="prompt-box" id="promptPreview"></div>
     </div>
   </section>
 
-  <section class="covers-section">
+  <!-- COVERAGE -->
+  <section class="coverage-section">
     <div class="container">
-      <div class="section-title">// What the prompt covers</div>
-      <div class="covers-grid">
-        <div class="cover-item"><span class="cover-num">01</span><span class="cover-label">Live data retrieval (price, earnings, news)</span></div>
-        <div class="cover-item"><span class="cover-num">02</span><span class="cover-label">Business thesis & revenue model</span></div>
-        <div class="cover-item"><span class="cover-num">03</span><span class="cover-label">Auto peer discovery & comparison</span></div>
-        <div class="cover-item"><span class="cover-num">04</span><span class="cover-label">Deep fundamental research</span></div>
-        <div class="cover-item"><span class="cover-num">05</span><span class="cover-label">Competitive positioning & moat analysis</span></div>
-        <div class="cover-item"><span class="cover-num">06</span><span class="cover-label">Macro & risk layer</span></div>
-        <div class="cover-item"><span class="cover-num">07</span><span class="cover-label">Technical analysis (EMAs, RSI, MACD)</span></div>
-        <div class="cover-item"><span class="cover-num">08</span><span class="cover-label">Options flow & dark pool</span></div>
-        <div class="cover-item"><span class="cover-num">09</span><span class="cover-label">Sentiment & crowding risk</span></div>
-        <div class="cover-item"><span class="cover-num">10</span><span class="cover-label">Full trading plan with R/R & conviction score</span></div>
+      <div class="section-label">// What every analysis covers</div>
+      <div class="coverage-grid">
+        <div class="cov-item"><span class="cov-num">01</span><span class="cov-text">Live data retrieval before analysis</span></div>
+        <div class="cov-item"><span class="cov-num">02</span><span class="cov-text">Business / strategy thesis</span></div>
+        <div class="cov-item"><span class="cov-num">03</span><span class="cov-text">Peer / benchmark comparison</span></div>
+        <div class="cov-item"><span class="cov-num">04</span><span class="cov-text">Fundamental deep-dive</span></div>
+        <div class="cov-item"><span class="cov-num">05</span><span class="cov-text">Risk layer (macro, regulatory, tail)</span></div>
+        <div class="cov-item"><span class="cov-num">06</span><span class="cov-text">Technical structure & entry zones</span></div>
+        <div class="cov-item"><span class="cov-num">07</span><span class="cov-text">Sentiment & positioning</span></div>
+        <div class="cov-item"><span class="cov-num">08</span><span class="cov-text">Actionable plan with R/R</span></div>
+        <div class="cov-item"><span class="cov-num">09</span><span class="cov-text">Bull / bear / hidden risk summary</span></div>
+        <div class="cov-item"><span class="cov-num">10</span><span class="cov-text">Conviction score & thesis invalidation</span></div>
       </div>
     </div>
   </section>
 
-  <section class="steps-section">
+  <!-- HOW TO USE -->
+  <section class="howto-section">
     <div class="container">
-      <div class="section-title">// How to use</div>
+      <div class="section-label">// How to use</div>
       <div class="steps">
-        <div class="step">
-          <span class="step-num">01</span>
-          <div class="step-content">
-            <strong>Enter your ticker above</strong>
-            <p>Type any stock symbol. The prompt auto-fills with your ticker.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">02</span>
-          <div class="step-content">
-            <strong>Choose Full or Lite mode</strong>
-            <p>Full = comprehensive 10-section institutional analysis. Lite = fast 8-point scan for quick decisions.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">03</span>
-          <div class="step-content">
-            <strong>Click "Copy Prompt"</strong>
-            <p>The complete prompt is copied to your clipboard, ready to paste.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">04</span>
-          <div class="step-content">
-            <strong>Open an AI with web search enabled</strong>
-            <p><code>Claude</code> (recommended), <code>ChatGPT</code>, or <code>Gemini</code>. Enable search — critical for live data.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">05</span>
-          <div class="step-content">
-            <strong>Paste and run</strong>
-            <p>Wait 2–5 minutes. Expect a detailed, structured analysis covering all 10 sections.</p>
-          </div>
-        </div>
+        <div class="step"><span class="step-num">01</span><div><strong>Pick your research mode above</strong><p>Stock analysis, dividend income, retirement, growth, ETF, options, or describe a custom strategy.</p></div></div>
+        <div class="step"><span class="step-num">02</span><div><strong>Enter your input</strong><p>A ticker symbol for most modes. For retirement or custom screen, describe your situation (e.g. "age 45, $500k, moderate risk").</p></div></div>
+        <div class="step"><span class="step-num">03</span><div><strong>Choose Full or Lite depth</strong><p>Full = complete multi-section institutional analysis. Lite = fast signal scan for quick decisions.</p></div></div>
+        <div class="step"><span class="step-num">04</span><div><strong>Click "Copy Prompt" then open an AI with web search</strong><p><code>Claude</code> (best), <code>ChatGPT</code>, or <code>Gemini</code>. Enable web search — critical for live data accuracy.</p></div></div>
+        <div class="step"><span class="step-num">05</span><div><strong>Paste and get your analysis</strong><p>Expect 2–5 minutes. Structured, institutional-grade output covering all sections with a full action plan.</p></div></div>
       </div>
+    </div>
+  </section>
+
+  <!-- FINANCIAL NEWS -->
+  <section class="news-section">
+    <div class="container">
+      <div class="news-header">
+        <div class="section-label" style="margin-bottom:0;">// Top 10 Financial News</div>
+        <button class="news-refresh" onclick="loadNews()">↻ Refresh</button>
+      </div>
+      <div class="news-grid" id="newsGrid">
+        <div class="news-loading">Loading latest financial news...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GURU QUOTES GRID -->
+  <section class="quotes-section">
+    <div class="container">
+      <div class="section-label">// Wisdom from the masters — refreshes every visit</div>
+      <div class="quotes-grid" id="quotesGrid"></div>
     </div>
   </section>
 </main>
 
 <footer>
-  <div class="container" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;width:100%;">
-    <span class="footer-text">MIT License — Free to use, share, and modify</span>
-    <div class="footer-links">
-      <a href="https://github.com" target="_blank">GitHub</a>
-      <a href="prompts/STOCK_ANALYSIS_PROMPT.md">Prompt File</a>
-      <a href="docs/BACKTEST_METHODOLOGY.md">Backtest Guide</a>
+  <div class="container">
+    <div class="footer-inner">
+      <span class="footer-text">MIT License — Free to use, share & modify</span>
+      <div class="footer-links">
+        <a href="https://github.com/Patluri9/institutional-stock-analyst-prompt" target="_blank">GitHub</a>
+        <a href="https://patluri9.github.io/institutional-stock-analyst-prompt/prompts/STOCK_ANALYSIS_PROMPT.md">Prompt Files</a>
+        <a href="https://patluri9.github.io/institutional-stock-analyst-prompt/docs/BACKTEST_METHODOLOGY.md">Backtest Guide</a>
+      </div>
     </div>
   </div>
 </footer>
@@ -652,203 +408,722 @@
 <div class="toast" id="toast">✓ Prompt copied to clipboard</div>
 
 <script>
-  const FULL_PROMPT = `You are an institutional-level equity research analyst, technical strategist, and market structure specialist with access to real-time search capability.
+const GURUS = [
+  { text: "Rule No. 1: Never lose money. Rule No. 2: Never forget Rule No. 1.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "The stock market is filled with individuals who know the price of everything, but the value of nothing.", author: "Philip Fisher", title: "Author, Common Stocks and Uncommon Profits" },
+  { text: "In the short run, the market is a voting machine. In the long run, it is a weighing machine.", author: "Benjamin Graham", title: "Father of Value Investing" },
+  { text: "The four most dangerous words in investing are: 'this time it's different.'", author: "Sir John Templeton", title: "Pioneer of Global Investing" },
+  { text: "Wide diversification is only required when investors do not understand what they are doing.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "The individual investor should act consistently as an investor and not as a speculator.", author: "Benjamin Graham", title: "Father of Value Investing" },
+  { text: "Know what you own, and know why you own it.", author: "Peter Lynch", title: "Former Manager, Fidelity Magellan Fund" },
+  { text: "The stock market is a device for transferring money from the impatient to the patient.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "Behind every stock is a company. Find out what it's doing.", author: "Peter Lynch", title: "Former Manager, Fidelity Magellan Fund" },
+  { text: "The time to buy is when there's blood in the streets.", author: "Baron Rothschild", title: "18th Century British Nobleman & Banker" },
+  { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin", title: "Founding Father & Polymath" },
+  { text: "Price is what you pay. Value is what you get.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "It's not whether you're right or wrong, but how much money you make when you're right and how much you lose when you're wrong.", author: "George Soros", title: "Founder, Soros Fund Management" },
+  { text: "The best investment you can make is an investment in yourself.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "Do not save what is left after spending, but spend what is left after saving.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "Financial markets are constantly in a state of uncertainty and flux, and money is made by discounting the obvious and betting on the unexpected.", author: "George Soros", title: "Founder, Soros Fund Management" },
+  { text: "Investing should be more like watching paint dry or watching grass grow. If you want excitement, take $800 and go to Las Vegas.", author: "Paul Samuelson", title: "Nobel Prize Economist" },
+  { text: "The most important quality for an investor is temperament, not intellect.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "Compound interest is the eighth wonder of the world. He who understands it, earns it; he who doesn't, pays it.", author: "Albert Einstein", title: "Theoretical Physicist" },
+  { text: "The key to making money in stocks is not to get scared out of them.", author: "Peter Lynch", title: "Former Manager, Fidelity Magellan Fund" },
+  { text: "Opportunities come infrequently. When it rains gold, put out the bucket, not the thimble.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" },
+  { text: "You make most of your money in a bear market, you just don't realize it at the time.", author: "Shelby Cullom Davis", title: "Legendary Insurance Stock Investor" },
+  { text: "The intelligent investor is a realist who sells to optimists and buys from pessimists.", author: "Benjamin Graham", title: "Father of Value Investing" },
+  { text: "Never invest in a business you cannot understand.", author: "Warren Buffett", title: "Chairman & CEO, Berkshire Hathaway" }
+];
 
-Analyze the stock: TICKER_PLACEHOLDER
+const PROMPTS = {
+  stock: {
+    full: (input) => `You are an institutional-level equity research analyst, technical strategist, and market structure specialist with real-time search capability.
 
-## ROLE & BEHAVIOR
-- Think like a hedge fund analyst preparing an internal brief — not a content creator
-- Use web search to retrieve the latest price, earnings, filings, news, and analyst data
-- Be brutally honest: if the thesis is weak, say so
-- No disclaimers. No beginner explanations. No filler. Signal only.
-- If confidence is low on a data point, flag it as [LOW CONFIDENCE]
-- Format: concise bullets only. Max 2-3 lines per sub-section.
+Analyze the stock: ${input || 'YOUR_TICKER'}
 
----
+ROLE: Think like a hedge fund analyst. No disclaimers. No filler. Signal only. Use web search first.
 
-## STEP 1 — LIVE DATA RETRIEVAL (Search First)
-Before any analysis, search and retrieve:
-- Current price, 52-week high/low, market cap
-- Most recent earnings (date, EPS beat/miss, revenue beat/miss)
-- Latest guidance (raised / lowered / maintained)
-- Most recent analyst actions — last 30 days (upgrades, downgrades, price target changes)
-- Any material news in the last 14 days
-- Insider transactions — last 90 days
-- Institutional ownership change — last quarter
+STEP 1 — LIVE DATA RETRIEVAL
+Search and retrieve: current price, 52W range, market cap, latest earnings (EPS/revenue beat-miss), guidance, analyst actions last 30 days, material news last 14 days, insider transactions last 90 days, institutional ownership change last quarter.
 
-Do not proceed to analysis until this data is retrieved.
+STEP 2 — BUSINESS THESIS
+One-sentence model. Revenue drivers. AI/cloud exposure (real or narrative?). TAM trajectory. Operating leverage. Valuation verdict. Bull or Bear — direct.
 
----
+STEP 3 — PEER DISCOVERY & COMPARISON
+Auto-identify: direct competitors, indirect, hyperscaler threats, open-source threats.
+Compare: revenue growth, gross margin, op margin, FCF yield, forward P/E, PEG, EV/Sales, moat durability.
+Verdict: best risk-adjusted play in the peer group?
 
-## STEP 2 — COMPANY & BUSINESS THESIS
-- Business model in one sentence
-- Primary revenue drivers and mix
-- AI / cloud / software / hardware exposure — is it real or narrative?
-- TAM: expanding, contracting, or oversaturated?
-- Operating leverage verdict
-- Valuation verdict: justified by fundamentals or priced on hope?
-- One-line thesis: Bull or Bear — be direct
+STEP 4 — FUNDAMENTAL RESEARCH
+Earnings quality, beat/miss pattern (4 quarters), guidance credibility, what management avoided.
+Balance sheet: cash, debt maturities, SBC % of revenue, buybacks, capex trend.
+Red flags: customer concentration, accounting anomalies, regulatory/legal exposure, China risk.
 
----
+STEP 5 — COMPETITIVE POSITIONING
+Moat widening or narrowing? Commoditization risk? Hyperscaler threat? Open-source threat? Most dangerous competitor? Key forward KPI? What's management not discussing?
 
-## STEP 3 — AUTOMATIC PEER DISCOVERY & COMPARISON
-Auto-identify: direct competitors, indirect competitors, sector leaders, emerging disruptors, open-source threats, hyperscaler threats.
+STEP 6 — MACRO & RISK LAYER
+Rate each High/Medium/Low: interest rate risk, recession sensitivity, FX, China, tariffs, semiconductor cycle, AI capex cycle, liquidity.
+Biggest non-obvious macro risk — one bullet.
 
-Compare each peer on: revenue growth, gross margin, operating margin, EPS growth, FCF yield, forward P/E, PEG, EV/Sales, market share direction, moat durability.
+STEP 7 — TECHNICAL ANALYSIS
+Price vs 21 EMA / 34 EMA / 50 SMA / 200 SMA. Trend structure. RSI, MACD, relative strength vs sector. Key support / resistance / liquidity zones. Overextended or healthy entry?
 
-Verdict: Is TICKER_PLACEHOLDER the best risk-adjusted play in its peer group?
+STEP 8 — OPTIONS & FLOW
+Unusual sweeps. Put/call ratio. IV rank. Gamma exposure. Dark pool signal. Smart money direction. Best trade structure (shares / calls / spreads).
 
----
+STEP 9 — SENTIMENT
+Retail: euphoric/neutral/fearful. Wall Street consensus direction. Crowding risk. Narrative saturation. Short interest.
 
-## STEP 4 — DEEP FUNDAMENTAL RESEARCH
-Earnings Quality: transcript highlights, revenue quality, beat/miss pattern (last 4 quarters), guidance credibility.
-Balance Sheet: cash position, debt maturities, SBC as % of revenue, buybacks, capex trend.
-Risk Flags: customer concentration, accounting red flags, AI capex dependency.
-Regulatory: antitrust exposure, litigation, China/export control risk, data privacy risk.
+STEP 10 — TRADING PLAN & FINAL SUMMARY
+Bias: Bullish/Neutral/Bearish. Entry zone | Pullback zone | Stop | T1 | T2 | T3 | R/R | Long-term grade.
 
----
+FINAL (bullets only): Bull case (3) | Bear case (3) | Hidden risk | Key catalyst | Best entry | Resistance (3) | Support (3) | Breakout probability | 3-month outlook | 1-year outlook | Conviction X/10 | Best strategy | Thesis invalidation.`,
 
-## STEP 5 — COMPETITIVE POSITIONING
-Answer each directly:
-- Is the moat widening or narrowing?
-- Is the product becoming commoditized?
-- Can open-source replicate the core product within 2 years?
-- Could AWS/Azure/GCP kill margins?
-- Who is the most dangerous competitor right now?
-- What KPI matters most going forward?
-- What is management NOT discussing?
+    lite: (input) => `Institutional equity analyst with web search. Analyze ${input || 'YOUR_TICKER'}:
 
----
+1. LIVE DATA: price, earnings, guidance, analyst actions (30d), news (14d), insider transactions, institutional ownership.
+2. THESIS: business model, AI exposure, TAM, valuation — bull or bear.
+3. PEERS: top 3 auto-identified. Compare revenue growth, margin, FCF, P/E. Best play in group?
+4. FUNDAMENTALS: earnings quality, SBC, debt, red flags.
+5. TECHNICALS: vs 21/50/200 EMA. RSI, MACD, relative strength. Support/resistance.
+6. FLOW: unusual options, IV rank, put/call, smart money.
+7. PLAN: Bias | Entry $X | Stop $X | T1 $X | T2 $X | R/R X:1
+8. FINAL: Bull (2) | Bear (2) | Hidden risk | Catalyst | 3M/1Y outlook | Conviction X/10 | Invalidation.
+Bullets only. No disclaimers. Hedge fund tone.`
+  },
 
-## STEP 6 — MACRO & RISK LAYER
-Rate each (High/Medium/Low): interest rate risk, recession sensitivity, FX exposure, China exposure, tariff risk, semiconductor cycle, AI capex cycle risk, liquidity risk.
-Identify the single biggest non-obvious macro risk.
+  dividend: {
+    full: (input) => `You are a dividend investment specialist and income portfolio analyst with real-time search capability.
 
----
+Analyze for dividend investing: ${input || 'YOUR_TICKER'}
 
-## STEP 7 — TECHNICAL ANALYSIS
-Trend: price vs. 21 EMA, 34 EMA, 50 SMA, 200 SMA. Higher highs/lows structure.
-Momentum: RSI (overbought/oversold/divergence), MACD crossover, relative strength vs. sector ETF.
-Levels: key support zones, key resistance zones, liquidity pools, gap analysis.
-Verdict: Overextended (wait) or healthy pullback (act)? Optimal entry zone?
+ROLE: Evaluate from a long-term income investor's perspective. No disclaimers. Signal only.
 
----
+STEP 1 — LIVE DATA RETRIEVAL
+Search: current price, dividend yield, annual dividend per share, ex-dividend dates, latest earnings, payout history, recent analyst actions, any dividend changes last 12 months.
 
-## STEP 8 — OPTIONS & FLOW ANALYSIS
-Search for current options data: unusual sweeps, put/call ratio, IV rank, gamma exposure, dark pool prints, smart money flow direction.
-Trade structure recommendation: shares / calls / spreads / puts — and why.
+STEP 2 — DIVIDEND HEALTH ANALYSIS
+Current yield vs 5-year average yield. Is it a yield trap or genuine value?
+Payout ratio (earnings and free cash flow based). Sustainable or at risk?
+Dividend growth rate: 1-year, 3-year, 5-year, 10-year CAGR.
+Dividend Aristocrat / King status? Consecutive years of increases?
+Coverage ratio: FCF per share vs dividend per share.
 
----
+STEP 3 — BUSINESS QUALITY ASSESSMENT
+Revenue stability and cyclicality. Is the business model dividend-friendly?
+Recurring revenue or contract-based? % of revenue that is predictable.
+Competitive moat protecting cash generation: pricing power, switching costs, market share.
+Capital intensity: does capex consume cash that could go to dividends?
 
-## STEP 9 — SENTIMENT ANALYSIS
-- Retail sentiment: euphoric / neutral / fearful
-- Wall Street consensus: bullish / mixed / bearish, and is it shifting?
-- Crowding risk: consensus long — what happens if it unwinds?
-- Narrative saturation: is the core thesis already fully priced in?
-- Short interest: % float short and trend
+STEP 4 — BALANCE SHEET & DEBT ANALYSIS
+Debt-to-EBITDA ratio. Can they service debt AND maintain the dividend?
+Debt maturity profile — any near-term refinancing that could crowd out dividends?
+Credit rating. Investment grade?
+Interest coverage ratio. Net leverage trend.
 
----
+STEP 5 — PEER DIVIDEND COMPARISON
+Auto-identify 3–4 dividend peers in the same sector.
+Compare: yield, payout ratio, FCF payout, 5-year dividend growth, forward P/E, earnings stability score.
+Who has the best balance of yield + safety + growth?
 
-## STEP 10 — TRADING PLAN & FINAL SUMMARY
+STEP 6 — DIVIDEND RISK FACTORS
+Earnings cyclicality that could force a cut.
+Regulatory risk to cash generation.
+Sector-specific headwinds (rising rates for REITs/utilities, commodity cycles for energy).
+Accounting quality: is FCF clean or inflated by working capital changes?
+SBC impact on distributable cash.
 
-Trading Plan:
-- Bias: Bullish / Neutral / Bearish
-- Entry zone | Pullback zone | Stop-loss | T1 | T2 | T3
-- Risk/Reward | Swing trade probability | Long-term grade (A/B/C/D)
+STEP 7 — TOTAL RETURN ANALYSIS
+Income component (yield). Capital appreciation potential at current valuation.
+Historical total return vs S&P 500. Forward total return estimate.
+Tax efficiency considerations (qualified vs ordinary dividends).
 
-Final Summary (bullets only):
-- Bull case (3 max) | Bear case (3 max)
-- Hidden risk (1-2 non-obvious) | Key catalyst (next 30-90 days)
-- Best entry (price + trigger) | Pullback zone | Resistance levels (top 3) | Support levels (top 3)
-- Breakout probability | 3-month outlook | 1-year outlook
-- Conviction score X/10 (with one-line reason)
-- Best risk-adjusted strategy | Thesis invalidation
+STEP 8 — VALUATION FOR INCOME INVESTORS
+P/E, P/FCF, EV/EBITDA vs historical averages and sector.
+Dividend discount model implied value.
+Is the current yield an attractive entry or fully priced?
 
-Concise bullets only. No disclaimers. No filler. Think hedge fund analyst.`;
+STEP 9 — INCOME INVESTOR TRADING PLAN
+Income thesis: Strong Buy / Buy / Hold / Avoid.
+Attractive entry yield zone. Maximum acceptable price for target yield.
+Reinvestment strategy recommendation.
+Portfolio allocation: core position or satellite income?
 
-  const LITE_PROMPT = `Act as an institutional equity analyst with web search. Analyze TICKER_PLACEHOLDER:
+FINAL SUMMARY (bullets only):
+Dividend safety score (1–10). Yield sustainability verdict. Growth trajectory. Hidden dividend risk. Best entry price/yield. 3-year income outlook. 5-year total return outlook. Conviction X/10. Recommended allocation %.`,
 
-1. RETRIEVE LIVE DATA: current price, earnings beat/miss, guidance, analyst actions (last 30 days), material news (last 14 days), insider transactions, institutional ownership change.
+    lite: (input) => `Dividend investment analyst with web search. Analyze ${input || 'YOUR_TICKER'}:
 
-2. THESIS: Business model, revenue drivers, AI/cloud exposure, TAM, valuation verdict — bull or bear in one sentence.
+1. LIVE DATA: price, yield, dividend/share, payout history, ex-dates, recent changes.
+2. DIVIDEND HEALTH: payout ratio (EPS + FCF based), dividend growth CAGR (1/3/5yr), consecutive increases, is this a yield trap?
+3. BUSINESS QUALITY: revenue stability, moat, capital intensity, FCF reliability.
+4. BALANCE SHEET: debt/EBITDA, coverage ratio, credit rating, refinancing risk.
+5. PEERS: top 3 dividend competitors. Compare yield, payout ratio, FCF payout, growth rate.
+6. RISKS: cut probability, earnings cyclicality, sector headwinds.
+7. VALUATION: P/FCF vs history, entry yield attractiveness, total return potential.
+8. VERDICT: Dividend safety X/10 | Best entry yield | 3-year income outlook | Conviction X/10.
+No disclaimers. Income investor perspective.`
+  },
 
-3. PEERS: Auto-identify top 3 competitors. Compare revenue growth, gross margin, FCF, forward P/E. Is TICKER_PLACEHOLDER the best play in the group?
+  retirement: {
+    full: (input) => `You are a certified retirement planning specialist and long-term wealth advisor with access to real-time search.
 
-4. FUNDAMENTALS: Earnings quality, SBC/dilution, balance sheet, customer concentration, red flags.
+Retirement profile: ${input || 'Describe your situation: age, current savings, income, target retirement age, risk tolerance, existing holdings'}
 
-5. TECHNICALS: Price vs 21/50/200 EMAs. RSI, MACD, relative strength. Key support/resistance. Overextended or entry opportunity?
+ROLE: Build a comprehensive retirement investment framework for this profile. No disclaimers. Institutional quality.
 
-6. OPTIONS FLOW: Unusual activity, IV rank, put/call ratio, smart money signal.
+STEP 1 — PROFILE ANALYSIS
+Parse the provided profile. If incomplete, state assumptions clearly.
+Calculate: years to retirement, required corpus at target retirement, required monthly savings at current trajectory.
+Gap analysis: on track, behind, or ahead?
 
-7. TRADING PLAN:
-   - Bias: Bullish / Neutral / Bearish
-   - Entry: $X | Pullback zone: $X | Stop: $X | T1: $X | T2: $X | R/R: X:1
+STEP 2 — ASSET ALLOCATION FRAMEWORK
+Age-appropriate asset allocation recommendation.
+Equity/Bond/Alternative/Cash split with rationale.
+Risk tolerance calibration: aggressive / moderate / conservative with sub-allocations.
+Glide path: how allocation should shift over time toward retirement.
 
-8. FINAL:
-   - Bull case (2 bullets) | Bear case (2 bullets) | Hidden risk | Key catalyst
-   - 3-month outlook | 1-year outlook | Conviction: X/10
-   - Best strategy | Thesis invalidation
+STEP 3 — EQUITY COMPONENT STRATEGY
+Core equity holdings recommendation (categories, not individual stocks unless profile warrants).
+US large cap / small cap / international / emerging market split.
+Growth vs value tilt based on profile.
+Sector exposure recommendations.
+Specific ETF/index fund options for each category.
 
-Concise bullets only. No disclaimers. No filler. Think hedge fund analyst.`;
+STEP 4 — FIXED INCOME STRATEGY
+Bond duration recommendation at this age/timeline.
+Government vs corporate vs TIPS split.
+I-Bonds consideration. Municipal bonds if applicable.
+Ladder strategy recommendation.
+Interest rate risk management.
 
-  let currentMode = 'full';
-  let ticker = '';
+STEP 5 — ALTERNATIVE ASSETS
+REITs allocation (real estate exposure without direct ownership).
+Commodities / gold as inflation hedge.
+Dividend stocks as income bridge near retirement.
+Any alternative exposure appropriate for profile.
 
-  function getPrompt() {
-    const t = ticker.trim().toUpperCase() || 'YOUR_TICKER';
-    const base = currentMode === 'full' ? FULL_PROMPT : LITE_PROMPT;
-    return base.replaceAll('TICKER_PLACEHOLDER', t);
+STEP 6 — TAX-EFFICIENT STRUCTURE
+Account type optimization: 401k, Roth IRA, Traditional IRA, taxable.
+Contribution limits for current year (search for current IRS limits).
+Asset location strategy: what goes in tax-deferred vs Roth vs taxable.
+Required Minimum Distribution (RMD) planning if applicable.
+Roth conversion opportunity analysis.
+
+STEP 7 — SOCIAL SECURITY & INCOME PLANNING
+Optimal Social Security claiming age for this profile.
+Sequence of returns risk — how to mitigate in early retirement.
+4% rule applicability and adjustments.
+Income floor strategy: guaranteed income sources.
+Healthcare cost bridge (pre-Medicare if retiring early).
+
+STEP 8 — RISK MANAGEMENT
+Inflation risk: how portfolio is positioned.
+Longevity risk: portfolio sustainability to age 90/95.
+Market sequence risk: first 5 years of retirement are critical.
+Emergency fund adequacy.
+Insurance gaps: life, disability, long-term care.
+
+STEP 9 — SPECIFIC INVESTMENT RECOMMENDATIONS
+Based on profile, name specific ETFs, funds, or categories with target allocations.
+Sample model portfolio for this profile.
+Rebalancing frequency recommendation.
+Cost/expense ratio benchmarks to target.
+
+FINAL SUMMARY:
+On-track verdict. Required savings rate adjustment. Model portfolio allocation table. Top 3 action items this month. Retirement readiness score X/10. Biggest risk to the plan.`,
+
+    lite: (input) => `Retirement planning specialist with web search. Profile: ${input || 'age, savings, income, target retirement age, risk tolerance'}
+
+1. GAP ANALYSIS: years to retirement, required corpus, current trajectory, on-track verdict.
+2. ASSET ALLOCATION: equity/bond/alt/cash split for this profile. Glide path.
+3. EQUITY STRATEGY: US/international/emerging split. Growth vs value tilt. Top 3 ETF recommendations.
+4. FIXED INCOME: duration, gov/corp/TIPS split, ladder strategy.
+5. TAX STRUCTURE: 401k/Roth/IRA optimization. Asset location. Contribution priority.
+6. INCOME PLAN: SS optimal claiming age, 4% rule check, sequence of returns risk.
+7. RISKS: inflation, longevity, healthcare cost, sequence risk.
+8. ACTION PLAN: model portfolio, top 3 immediate actions, readiness score X/10.
+Institutional quality. No fluff.`
+  },
+
+  growth: {
+    full: (input) => `You are an institutional growth equity analyst specializing in high-conviction growth investing with real-time search capability.
+
+Analyze for growth investing: ${input || 'YOUR_TICKER or describe your risk tolerance: aggressive/moderate/conservative'}
+
+ROLE: Identify and analyze high-conviction growth opportunities. Risk-calibrated. No disclaimers.
+
+STEP 1 — LIVE DATA & GROWTH METRICS
+Search: current price, revenue growth rate (YoY, QoQ), gross margin trend, net revenue retention (if SaaS), ARR/MRR growth, Rule of 40 score, magic number (efficiency), CAC/LTV.
+
+STEP 2 — GROWTH THESIS
+Primary growth vector: TAM expansion, market share gain, or new market creation?
+Is growth organic or acquisition-driven?
+S-curve positioning: early adoption, growth phase, or maturing?
+Product-led or sales-led growth? Unit economics trend.
+Net dollar retention: are existing customers expanding spend?
+
+STEP 3 — COMPETITIVE MOAT IN GROWTH CONTEXT
+Network effects: stronger or weaker as the company scales?
+Data moat: does more usage create a compounding data advantage?
+Switching costs: how sticky is the product at enterprise vs SMB level?
+Timing moat: first mover advantage or follower advantage?
+Who could disrupt them in 3 years?
+
+STEP 4 — MARKET OPPORTUNITY
+TAM: total addressable, serviceable, and obtainable market.
+Penetration rate: what % of TAM captured today?
+Is TAM expanding or being redefined?
+International expansion: what's the global runway?
+Adjacent market opportunities: what can they sell next?
+
+STEP 5 — FINANCIAL QUALITY FOR GROWTH INVESTORS
+Revenue growth sustainability: is acceleration or deceleration the trend?
+Gross margin profile: improving (scalable) or compressing (commodity)?
+Operating leverage: does revenue growth fall to bottom line faster now?
+Cash burn: if pre-profit, what's runway at current burn?
+Path to profitability: concrete or aspirational?
+
+STEP 6 — RISK-CALIBRATED ANALYSIS
+Based on stated risk tolerance (aggressive/moderate/conservative):
+Maximum drawdown tolerance.
+Concentration limits.
+Growth at any price vs growth at a reasonable price framework.
+How much multiple compression can the thesis survive?
+What revenue miss % would invalidate the investment?
+
+STEP 7 — VALUATION FOR GROWTH
+EV/Revenue vs growth rate (PSG ratio).
+Forward revenue estimates: consensus vs your estimate.
+Multiple compression scenario: what if multiple contracts 30%/50%?
+What revenue CAGR is priced in at current multiple?
+Historical multiple range and where we are now.
+
+STEP 8 — TECHNICAL SETUP
+Price vs key EMAs. Is it in a base or extended?
+Volume confirmation. Institutional accumulation signature.
+Prior breakout success rate from this level.
+Optimal entry for a growth investor (buy the dip vs buy the breakout).
+
+STEP 9 — GROWTH INVESTOR TRADING PLAN
+Conviction level. Position sizing recommendation.
+Entry strategy: scale-in tranches or full position at entry.
+Catalyst timeline: what triggers the next re-rating?
+Hold period: 12 months, 3 years, or indefinitely?
+Trim vs hold rules if stock doubles.
+
+FINAL SUMMARY (bullets):
+Growth score X/10. Key growth vector. Biggest risk to growth thesis. Multiple compression scenario. Best entry. 1-year revenue growth estimate. 3-year stock return potential. Conviction X/10.`,
+
+    lite: (input) => `Growth equity analyst with web search. Analyze ${input || 'YOUR_TICKER (include risk tolerance: aggressive/moderate/conservative)'}:
+
+1. LIVE DATA: price, revenue growth rate, gross margin trend, Rule of 40, ARR growth, net dollar retention.
+2. GROWTH THESIS: primary vector, organic vs M&A, S-curve position, unit economics.
+3. MOAT: network effects, data advantage, switching costs, disruption risk.
+4. MARKET: TAM penetration %, expansion runway, international opportunity.
+5. FINANCIALS: revenue acceleration/deceleration, gross margin direction, path to profitability.
+6. RISK CALIBRATION: drawdown tolerance, multiple compression scenario, revenue miss threshold.
+7. VALUATION: EV/Revenue vs growth (PSG), what CAGR is priced in?
+8. PLAN: Entry | Hold period | Catalyst | Position size | 1Y/3Y return potential | Conviction X/10.
+No disclaimers. Growth investor lens.`
+  },
+
+  etf: {
+    full: (input) => `You are an ETF and index fund specialist with institutional asset allocation expertise and real-time search capability.
+
+Analyze ETF / fund: ${input || 'YOUR_ETF_TICKER or describe your allocation goal'}
+
+ROLE: Comprehensive ETF due diligence and portfolio integration analysis. No fluff.
+
+STEP 1 — LIVE ETF DATA
+Search: AUM, expense ratio, daily volume/liquidity, inception date, YTD/1Y/3Y/5Y/10Y total returns, tracking error vs benchmark, distribution yield, NAV vs market price (premium/discount).
+
+STEP 2 — HOLDINGS ANALYSIS
+Top 10 holdings and concentration (% of fund).
+Sector allocation breakdown.
+Geographic exposure (US vs international).
+Market cap tilt (mega/large/mid/small).
+Factor exposure: growth, value, momentum, quality, low-vol.
+Any hidden concentration risk in top holdings?
+
+STEP 3 — OVERLAP ANALYSIS
+Common overlaps with: SPY, QQQ, VTI, VXUS.
+If user holds other ETFs, estimate overlap %.
+Identify true incremental diversification value.
+Correlation to broader market.
+
+STEP 4 — COST & TAX EFFICIENCY
+Expense ratio vs category average.
+Tax cost ratio (capital gains distributions history).
+Tax-loss harvesting substitute options.
+Total cost of ownership over 10-year horizon.
+Tax-lot considerations for taxable accounts.
+
+STEP 5 — BENCHMARK & PERFORMANCE ANALYSIS
+Index it tracks. Quality of the index methodology.
+Active share vs benchmark.
+Factor attribution: how much of return is factor vs selection?
+Risk-adjusted return: Sharpe ratio, Sortino ratio vs peers.
+Maximum drawdown in 2020 and 2022 corrections.
+
+STEP 6 — ALTERNATIVES COMPARISON
+Auto-identify 3 competing ETFs in the same category.
+Compare: expense ratio, AUM, liquidity, tracking error, 5Y return, yield.
+Verdict: is this the best vehicle for the exposure sought?
+
+STEP 7 — PORTFOLIO INTEGRATION
+What role does this ETF play: core, satellite, tactical, hedging?
+Optimal allocation % range for this role.
+Rebalancing trigger recommendation.
+Pair with: what other ETFs complement this?
+Avoid pairing with: what creates undesired overlap?
+
+STEP 8 — MACRO SENSITIVITY
+How does this ETF perform in: rising rates, recession, dollar strength, inflation?
+Sector/factor tilts that create macro sensitivity.
+Scenario analysis: 2008-style crash, 2022 rate shock, inflationary 1970s-style.
+
+FINAL SUMMARY (bullets):
+Recommendation: Buy / Hold / Avoid. Best use case. Hidden risks. True expense cost. Best alternatives. Portfolio fit. 5-year total return estimate. Conviction X/10.`,
+
+    lite: (input) => `ETF specialist with web search. Analyze ${input || 'YOUR_ETF_TICKER'}:
+
+1. LIVE DATA: AUM, expense ratio, liquidity, 1/3/5Y return, tracking error, yield, NAV premium/discount.
+2. HOLDINGS: top 10 concentration, sector breakdown, geographic split, factor tilt.
+3. OVERLAP: vs SPY/QQQ/VTI. True diversification value.
+4. COST: expense ratio vs category average, tax efficiency, 10Y total cost.
+5. ALTERNATIVES: 3 competing ETFs. Compare expense, liquidity, return, yield.
+6. PORTFOLIO FIT: role, optimal allocation %, what it complements, what to avoid.
+7. MACRO: rate sensitivity, recession behavior, inflation behavior.
+8. VERDICT: Buy/Hold/Avoid | Best use case | Key risk | Conviction X/10.`
+  },
+
+  options: {
+    full: (input) => `You are an institutional options strategist and derivatives specialist with real-time search and flow analysis capability.
+
+Analyze options strategy for: ${input || 'YOUR_TICKER or describe your goal: income/hedge/speculation'}
+
+ROLE: Professional options analysis. No disclaimers. Risk-defined strategies.
+
+STEP 1 — LIVE OPTIONS DATA
+Search: current IV rank, IV percentile, historical volatility (30-day, 60-day), put/call ratio, current ATM straddle price (expected move %), options volume vs open interest, term structure (contango/backwardation).
+
+STEP 2 — VOLATILITY REGIME ANALYSIS
+Current IV vs historical range: rich or cheap?
+IV surface: skew analysis (put skew, call skew, or flat?).
+Volatility event calendar: earnings date, FOMC, major catalyst.
+Best volatility strategy given current regime: buy vol (cheap) or sell vol (expensive)?
+Historical post-earnings IV crush magnitude.
+
+STEP 3 — UNUSUAL OPTIONS ACTIVITY
+Large sweeps: bullish or bearish?
+Institutional block trades and their strikes/expiries.
+Dark pool correlation to options positioning.
+Short-dated vs long-dated positioning divergence.
+Smart money directional bias from flow.
+
+STEP 4 — STRATEGY SELECTION
+Based on market outlook and IV regime, evaluate:
+If bullish + IV cheap: long calls, bull call spread, LEAPS.
+If bullish + IV expensive: cash-secured put, bull put spread.
+If neutral + IV expensive: iron condor, short strangle, covered call.
+If bearish + IV cheap: long puts, bear put spread.
+If hedging: protective put, collar, synthetic hedge.
+Rank top 2-3 strategies for the current setup with rationale.
+
+STEP 5 — SPECIFIC TRADE STRUCTURE
+For the recommended strategy, provide:
+Exact strikes and expiry. Delta, theta, vega, gamma exposure.
+Max profit, max loss, breakeven points.
+Premium received or paid.
+ROI on capital at risk.
+Probability of profit (POP).
+When to enter (IV timing) and when to exit (profit target / loss limit / time decay).
+
+STEP 6 — GREEKS RISK MANAGEMENT
+Delta exposure and hedge ratio if needed.
+Theta decay curve — does time work for or against this trade?
+Vega risk — what does a 5-point IV move do to P/L?
+Gamma risk near expiration.
+Adjustment triggers: at what price do you adjust/roll/close?
+
+STEP 7 — EARNINGS PLAY SPECIFIC (if applicable)
+Expected move priced by options vs analyst estimates.
+Historical beat/miss and post-earnings move.
+Straddle buy vs strangle sell decision.
+Best expiry to capture or sell the event.
+Pre-earnings vs post-earnings positioning.
+
+STEP 8 — PORTFOLIO CONTEXT
+How does this options position interact with existing stock/ETF holdings?
+Net portfolio delta after this trade.
+Correlation hedging benefit.
+Capital efficiency vs owning shares outright.
+
+FINAL SUMMARY (bullets):
+Volatility verdict (buy/sell vol). Recommended strategy. Exact structure. Risk/Reward. POP %. Key risk. Entry timing. Exit rules. Conviction X/10.`,
+
+    lite: (input) => `Options strategist with web search. Analyze ${input || 'YOUR_TICKER (state goal: income/hedge/speculation)'}:
+
+1. LIVE DATA: IV rank, IV percentile, 30-day HV, put/call ratio, expected move %, term structure.
+2. VOLATILITY: IV vs historical range (rich/cheap), skew direction, upcoming events.
+3. FLOW: unusual sweeps, institutional positioning, smart money directional bias.
+4. STRATEGY: best fit given IV regime and outlook. Top 2 options with rationale.
+5. STRUCTURE: strikes, expiry, delta, max profit/loss, breakevens, POP%.
+6. GREEKS: theta direction, vega risk, adjustment triggers.
+7. EARNINGS (if near): expected move vs actual, straddle buy or sell?
+8. VERDICT: Recommended trade | Entry | Exit rules | Conviction X/10.`
+  },
+
+  screen: {
+    full: (input) => `You are an institutional quantitative analyst and portfolio strategist with comprehensive market search capability.
+
+Custom research request: ${input || 'Describe your strategy, screen criteria, or research question in detail'}
+
+ROLE: Answer this research request at institutional quality. Search for all relevant data. No disclaimers. Be specific.
+
+STEP 1 — REQUEST INTERPRETATION
+Parse the request. Identify: is this a stock screen, sector analysis, macro question, portfolio strategy, thematic investment, or comparative study?
+State any assumptions. Ask for no clarification — work with what's given.
+
+STEP 2 — LIVE MARKET RESEARCH
+Search for all relevant current data to answer this request.
+If a screen: retrieve candidates that match the criteria.
+If a sector: retrieve current sector performance, valuations, leaders, laggards.
+If thematic: retrieve the key companies, ETFs, and metrics relevant to this theme.
+If macro: retrieve current economic data points relevant to the question.
+
+STEP 3 — SYSTEMATIC ANALYSIS
+Apply systematic analysis to the request:
+For screens → rank candidates by quality, valuation, and momentum.
+For sectors → identify the best 3 entry points and worst 3 to avoid.
+For themes → identify the pure-play vs derivative exposure options.
+For macro → translate to investable implications with specific vehicles.
+
+STEP 4 — DEEP DIVE ON TOP FINDINGS
+Take the top 3–5 results from Step 3.
+For each: brief thesis, key risk, valuation, technical setup, recommended approach.
+
+STEP 5 — RISK OVERLAY
+What are the common risks across these findings?
+What macro scenario kills this entire thesis?
+What's the correlation structure — are these diversified or highly correlated?
+
+STEP 6 — PORTFOLIO INTEGRATION
+How would a $100,000 portfolio allocate across the top findings?
+Equal weight vs conviction-weighted?
+Rebalancing trigger. Exit conditions.
+
+STEP 7 — ACTIONABLE PLAN
+Rank the findings by conviction.
+For each: entry approach, position size, hold period, stop/exit.
+Total portfolio risk if all positions are taken.
+
+FINAL SUMMARY:
+Top 3 findings. Common thesis. Key risk. Recommended allocation. First action to take. Conviction X/10.`,
+
+    lite: (input) => `Quantitative analyst with web search. Research request: ${input || 'Describe your screen, strategy, or research question'}
+
+1. INTERPRET: What type of request is this? State assumptions.
+2. SEARCH: Retrieve all relevant current data, candidates, or metrics.
+3. SCREEN/RANK: Top 5 results matching criteria, ranked by quality + momentum + valuation.
+4. TOP 3 DEEP DIVE: thesis, key risk, valuation, recommended approach for each.
+5. RISKS: common risks, macro scenario that kills the thesis, correlation structure.
+6. PORTFOLIO: how to allocate across findings, position sizing.
+7. ACTION PLAN: ranked by conviction, entry, size, hold period, exit rules.
+8. VERDICT: top finding | key risk | conviction X/10.`
   }
+};
 
-  function updatePreview() {
-    const preview = document.getElementById('promptPreview');
-    const t = ticker.trim().toUpperCase() || 'YOUR_TICKER';
-    const base = currentMode === 'full' ? FULL_PROMPT : LITE_PROMPT;
-    // Highlight ticker in preview
-    const escaped = base.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const highlighted = escaped.replaceAll('TICKER_PLACEHOLDER', 
-      `<span class="ticker-highlight">${t}</span>`
-    );
-    preview.innerHTML = highlighted;
-  }
+const MODES_CONFIG = {
+  stock: { color: '#c8f135', placeholder: 'NVDA', context: 'Enter ticker symbol (e.g. NVDA, AAPL, TSLA, META)', label: 'FULL — 10 SECTIONS', liteMeta: 'LITE — 8 SECTIONS' },
+  dividend: { color: '#4ea8ff', placeholder: 'KO', context: 'Enter dividend stock ticker (e.g. KO, JNJ, O, VZ)', label: 'FULL — 9 SECTIONS', liteMeta: 'LITE — 8 SECTIONS' },
+  retirement: { color: '#b49fff', placeholder: '', context: 'Describe your situation: "age 45, $400k saved, $8k/month income, retire at 62, moderate risk"', label: 'FULL — 9 SECTIONS', liteMeta: 'LITE — 8 SECTIONS' },
+  growth: { color: '#4affcb', placeholder: 'NVDA', context: 'Enter growth stock ticker + risk tolerance (e.g. "NVDA, aggressive" or "CRWD, moderate")', label: 'FULL — 9 SECTIONS', liteMeta: 'LITE — 8 SECTIONS' },
+  etf: { color: '#ff9f4a', placeholder: 'QQQ', context: 'Enter ETF ticker (e.g. QQQ, VTI, SCHD, ARKK)', label: 'FULL — 8 SECTIONS', liteMeta: 'LITE — 8 SECTIONS' },
+  options: { color: '#ff5555', placeholder: 'TSLA', context: 'Enter ticker + goal (e.g. "TSLA income" or "SPY hedge" or "NVDA speculation")', label: 'FULL — 8 SECTIONS', liteMeta: 'LITE — 8 SECTIONS' },
+  screen: { color: '#ffd700', placeholder: '', context: 'Describe any strategy or screen (e.g. "profitable AI companies under $10B market cap with 30%+ revenue growth")', label: 'FULL — 7 SECTIONS', liteMeta: 'LITE — 7 SECTIONS' }
+};
 
-  function setMode(mode) {
-    currentMode = mode;
-    document.getElementById('btnFull').classList.toggle('active', mode === 'full');
-    document.getElementById('btnLite').classList.toggle('active', mode === 'lite');
-    document.getElementById('modeLabel').textContent = 
-      mode === 'full' ? 'FULL MODE — 10 SECTIONS' : 'LITE MODE — 8 SECTIONS';
-    updatePreview();
-  }
+let currentMode = 'stock';
+let currentDepth = 'full';
+let userInput = '';
 
-  function copyPrompt() {
-    const prompt = getPrompt();
-    navigator.clipboard.writeText(prompt).then(() => {
-      const btn = document.getElementById('copyBtn');
-      btn.textContent = '✓ Copied!';
-      btn.classList.add('copied');
-      setTimeout(() => {
-        btn.textContent = 'Copy Prompt';
-        btn.classList.remove('copied');
-      }, 2000);
-      showToast();
-    });
-  }
-
-  function showToast() {
-    const toast = document.getElementById('toast');
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2500);
-  }
-
-  document.getElementById('tickerInput').addEventListener('input', function() {
-    ticker = this.value;
-    updatePreview();
-  });
-
-  // Initialize
+function selectMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+  document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+  const cfg = MODES_CONFIG[mode];
+  document.documentElement.style.setProperty('--active-color', cfg.color);
+  const inp = document.getElementById('mainInput');
+  inp.placeholder = cfg.placeholder || 'Describe your request...';
+  inp.style.fontSize = cfg.placeholder ? '22px' : '14px';
+  inp.style.letterSpacing = cfg.placeholder ? '0.08em' : '0';
+  inp.style.textTransform = cfg.placeholder ? 'uppercase' : 'none';
+  document.getElementById('inputContextText').textContent = cfg.context;
+  const btnFull = document.getElementById('btnFull');
+  const btnLite = document.getElementById('btnLite');
+  if (currentDepth === 'full') { btnFull.style.borderColor = cfg.color; btnFull.style.color = cfg.color; }
   updatePreview();
-</script>
+  updatePreviewMeta();
+}
 
+function setDepth(depth) {
+  currentDepth = depth;
+  document.getElementById('btnFull').classList.toggle('active', depth === 'full');
+  document.getElementById('btnLite').classList.toggle('active', depth === 'lite');
+  updatePreview();
+  updatePreviewMeta();
+}
+
+function updatePreviewMeta() {
+  const cfg = MODES_CONFIG[currentMode];
+  document.getElementById('previewMeta').textContent = currentDepth === 'full' ? cfg.label : cfg.liteMeta;
+}
+
+function getPromptText() {
+  const input = userInput.trim() || MODES_CONFIG[currentMode].placeholder || 'DESCRIBE YOUR REQUEST';
+  return PROMPTS[currentMode][currentDepth](input);
+}
+
+function updatePreview() {
+  const text = getPromptText();
+  const input = (userInput.trim() || MODES_CONFIG[currentMode].placeholder || '').toUpperCase();
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let highlighted = escaped;
+  if (input) highlighted = escaped.replaceAll(input, `<span class="hi">${input}</span>`);
+  document.getElementById('promptPreview').innerHTML = highlighted;
+}
+
+function copyPrompt() {
+  navigator.clipboard.writeText(getPromptText()).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy Prompt'; btn.classList.remove('copied'); }, 2200);
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  });
+}
+
+document.getElementById('mainInput').addEventListener('input', function() {
+  userInput = this.value;
+  updatePreview();
+});
+
+// --- ROTATING GURU QUOTES ---
+function getRandomQuotes(count) {
+  const shuffled = [...GURUS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+function initHeroQuote() {
+  const q = GURUS[Math.floor(Math.random() * GURUS.length)];
+  document.getElementById('heroQuoteText').textContent = q.text;
+  document.getElementById('heroQuoteAuthor').textContent = `— ${q.author}, ${q.title}`;
+}
+
+function renderQuotesGrid() {
+  const selected = getRandomQuotes(6);
+  const grid = document.getElementById('quotesGrid');
+  grid.innerHTML = selected.map(q => `
+    <div class="quote-card">
+      <div class="quote-card-text">${q.text}</div>
+      <div class="quote-card-author">${q.author}</div>
+      <div class="quote-card-title">${q.title}</div>
+    </div>
+  `).join('');
+}
+
+// --- FINANCIAL NEWS (via RSS-to-JSON services) ---
+const NEWS_FEEDS = [
+  { url: 'https://feeds.finance.yahoo.com/rss/2.0/headline?s=^GSPC,^DJI,^IXIC&region=US&lang=en-US', source: 'Yahoo Finance' },
+  { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', source: 'CNBC Markets' },
+  { url: 'https://feeds.marketwatch.com/marketwatch/topstories/', source: 'MarketWatch' }
+];
+
+const FALLBACK_NEWS = [
+  { title: "Fed holds rates steady as inflation data shows continued cooling toward 2% target", source: "Reuters", time: "2h ago", tag: "neutral" },
+  { title: "S&P 500 notches fourth consecutive weekly gain as tech earnings beat expectations", source: "Bloomberg", time: "3h ago", tag: "bull" },
+  { title: "NVIDIA reports record data center revenue, raises guidance for next quarter", source: "CNBC", time: "4h ago", tag: "bull" },
+  { title: "Treasury yields rise as stronger-than-expected jobs data reduces rate cut expectations", source: "WSJ", time: "5h ago", tag: "bear" },
+  { title: "China export controls on rare earth materials raise supply chain concerns for chip makers", source: "FT", time: "6h ago", tag: "bear" },
+  { title: "Apple expands AI features across product line ahead of WWDC developer conference", source: "Bloomberg", time: "7h ago", tag: "bull" },
+  { title: "Warren Buffett increases Berkshire Hathaway cash position to record $189 billion", source: "Reuters", time: "8h ago", tag: "neutral" },
+  { title: "Oil prices dip as OPEC+ signals potential production increase in upcoming meeting", source: "MarketWatch", time: "9h ago", tag: "bear" },
+  { title: "Microsoft Azure cloud revenue accelerates, beating analyst estimates by wide margin", source: "CNBC", time: "10h ago", tag: "bull" },
+  { title: "Consumer confidence index falls for third consecutive month amid economic uncertainty", source: "WSJ", time: "11h ago", tag: "bear" }
+];
+
+async function loadNews() {
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = '<div class="news-loading">↻ Fetching latest financial news...</div>';
+  try {
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent('https://feeds.finance.yahoo.com/rss/2.0/headline?s=%5EGSPC,%5EDJI,%5EIXIC&region=US&lang=en-US')}&count=10`;
+    const res = await fetch(apiUrl, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) throw new Error('RSS fetch failed');
+    const data = await res.json();
+    if (data.status !== 'ok' || !data.items || data.items.length === 0) throw new Error('No items');
+    const items = data.items.slice(0, 10);
+    renderNews(items.map((item, i) => ({
+      title: item.title,
+      link: item.link,
+      source: item.author || 'Yahoo Finance',
+      time: formatNewsTime(item.pubDate),
+      tag: getNewsTag(item.title)
+    })));
+  } catch (e) {
+    renderNews(FALLBACK_NEWS);
+  }
+}
+
+function formatNewsTime(pubDate) {
+  if (!pubDate) return '';
+  try {
+    const d = new Date(pubDate);
+    const diff = (Date.now() - d.getTime()) / 60000;
+    if (diff < 60) return `${Math.round(diff)}m ago`;
+    if (diff < 1440) return `${Math.round(diff/60)}h ago`;
+    return `${Math.round(diff/1440)}d ago`;
+  } catch { return ''; }
+}
+
+function getNewsTag(title) {
+  const t = title.toLowerCase();
+  const bearWords = ['fall', 'drop', 'decline', 'slump', 'crash', 'loss', 'miss', 'cut', 'concern', 'risk', 'fear', 'recession', 'down'];
+  const bullWords = ['rise', 'gain', 'beat', 'surge', 'record', 'rally', 'growth', 'up', 'strong', 'outperform', 'exceed'];
+  const bearScore = bearWords.filter(w => t.includes(w)).length;
+  const bullScore = bullWords.filter(w => t.includes(w)).length;
+  if (bullScore > bearScore) return 'bull';
+  if (bearScore > bullScore) return 'bear';
+  return 'neutral';
+}
+
+function renderNews(items) {
+  const grid = document.getElementById('newsGrid');
+  grid.innerHTML = items.map((item, i) => `
+    <div class="news-item">
+      <span class="news-num">${String(i+1).padStart(2,'0')}</span>
+      <div class="news-content">
+        <a class="news-title" href="${item.link || '#'}" target="_blank" rel="noopener">${item.title}</a>
+        <div class="news-meta">
+          <span class="news-source">${item.source}</span>
+          ${item.time ? `<span class="news-time">${item.time}</span>` : ''}
+          <span class="news-tag tag-${item.tag}">${item.tag === 'bull' ? '↑ Bullish' : item.tag === 'bear' ? '↓ Bearish' : '→ Neutral'}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// INIT
+initHeroQuote();
+renderQuotesGrid();
+loadNews();
+updatePreview();
+updatePreviewMeta();
+</script>
 </body>
 </html>
