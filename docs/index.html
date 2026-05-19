@@ -3,935 +3,892 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<!--
-  SECURITY AUDIT LOG
-  ==================
-  [1] CSP: restricts scripts, connections, fonts to known origins only
-  [2] API key: sessionStorage only — cleared on tab close, never in URL/cookie/localStorage
-  [3] Input validation: ticker regex /^[A-Z0-9.\-\^]{1,10}$/i enforced before any API call
-  [4] API key format validation: /^sk-ant-[A-Za-z0-9\-_]{20,}$/ before storage
-  [5] XSS: all dynamic content sanitized via DOM textContent (browser-native escaping)
-  [6] Rate limiting: isAnalyzing flag + 3s cooldown prevents request flooding
-  [7] Error handling: generic user messages, no stack traces exposed
-  [8] No eval(), no new Function(), no dynamic script injection
-  [9] External deps: Google Fonts CSS + optional GA4 only — no untrusted JS CDNs
-  [10] HTTPS enforced by GitHub Pages — prevents MITM on API key in transit
-  [11] Clickjacking: frame-ancestors 'self' in CSP
-  [12] API responses parsed safely with try/catch fallback — malformed JSON cannot execute code
--->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; connect-src https://api.anthropic.com https://www.google-analytics.com https://region1.google-analytics.com; img-src 'self' data:; frame-ancestors 'self';">
-<title>AI Investment OS — Institutional Research, Free</title>
-<meta name="description" content="AI-powered institutional investment research. Stock analysis, risk scoring, earnings summaries, and content generation — powered by Claude.">
+<title>AI Investment OS — Free Research for Everyone</title>
+<meta name="description" content="Free institutional-grade stock research. Pick your AI, pick your analyst persona, get a complete investment thesis in seconds.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-
-<!--
-  ╔══════════════════════════════════════════════╗
-  ║  OWNER CONFIGURATION — EDIT THESE VALUES     ║
-  ╠══════════════════════════════════════════════╣
-  ║  GA_ID: Your Google Analytics 4 ID           ║
-  ║  Find it: GA4 → Admin → Data Streams         ║
-  ║  Looks like: G-XXXXXXXXXX                    ║
-  ║                                              ║
-  ║  You'll see these events in GA4 dashboard:   ║
-  ║  • ticker_analyzed  (ticker, sentiment,      ║
-  ║                       risk_score, conviction)║
-  ║  • content_exported (type, ticker)           ║
-  ║  • watchlist_added  (ticker)                 ║
-  ║  • api_key_connected (just a count)          ║
-  ║                                              ║
-  ║  TRENDING: update FEATURED_TICKERS below     ║
-  ║  weekly based on your GA4 top tickers report ║
-  ╚══════════════════════════════════════════════╝
--->
-<script>
-const OWNER_CONFIG = {
-  GA_ID: '',
-  SITE_NAME: 'AI Investment OS',
-  GITHUB_URL: 'https://github.com/Patluri9/institutional-stock-analyst-prompt',
-  FEATURED_TICKERS: ['NVDA','AAPL','TSLA','MSFT','META','AMZN','GOOGL','AMD']
-};
-if (OWNER_CONFIG.GA_ID) {
-  const s = document.createElement('script');
-  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + OWNER_CONFIG.GA_ID;
-  s.async = true;
-  document.head.appendChild(s);
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function(){ dataLayer.push(arguments); };
-  gtag('js', new Date());
-  gtag('config', OWNER_CONFIG.GA_ID);
-}
-function track(name, params) {
-  if (OWNER_CONFIG.GA_ID && typeof gtag !== 'undefined') gtag('event', name, params || {});
-}
-</script>
-
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#09090b;--sur:#111113;--sur2:#17171a;--bor:#1f1f25;--bor2:#2a2a32;
-  --acc:#c8f135;--adim:rgba(200,241,53,.09);
+  --bg:#09090b;--s1:#111113;--s2:#17171a;--b1:#1f1f25;--b2:#2e2e38;
+  --acc:#c8f135;--adim:rgba(200,241,53,.08);
   --blue:#60a5fa;--bdim:rgba(96,165,250,.1);
   --pur:#a78bfa;--pdim:rgba(167,139,250,.1);
   --red:#f87171;--rdim:rgba(248,113,113,.1);
-  --grn:#4ade80;--gdim:rgba(74,222,.12);
-  --org:#fb923c;
+  --grn:#4ade80;--gdim:rgba(74,222,128,.1);
+  --org:#fb923c;--gold:#fbbf24;
   --tx:#e4e4e7;--mut:#71717a;--dim:#3f3f46;
   --mono:'IBM Plex Mono','Courier New',monospace;
 }
-body{background:var(--bg);color:var(--tx);font-family:var(--mono);font-size:13px;line-height:1.5;min-height:100vh}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:var(--mono);font-size:13px;line-height:1.55;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b2)}
 
-/* ── MODAL ── */
-#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
-.modal{background:var(--sur);border:1px solid var(--bor2);padding:32px;max-width:480px;width:100%}
-.modal-logo{display:flex;align-items:center;gap:8px;margin-bottom:24px}
-.modal-logo-box{width:28px;height:28px;border:1.5px solid var(--acc);display:flex;align-items:center;justify-content:center;color:var(--acc);font-weight:700;font-size:14px}
-.modal-title{font-size:17px;font-weight:700;color:var(--tx);margin-bottom:6px}
-.modal-sub{font-size:11px;color:var(--mut);margin-bottom:24px;line-height:1.6}
-.modal-steps{margin-bottom:20px}
-.modal-step{display:flex;gap:10px;margin-bottom:12px;font-size:11px;color:var(--mut);align-items:flex-start}
-.step-n{width:18px;height:18px;border:1px solid var(--bor2);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--acc);flex-shrink:0}
-.modal-inp{width:100%;background:var(--sur2);border:1px solid var(--bor);color:var(--tx);font-family:var(--mono);font-size:13px;padding:12px 14px;outline:none;transition:border-color .2s;margin-bottom:8px}
-.modal-inp:focus{border-color:var(--acc)}
-.modal-inp::placeholder{color:var(--dim)}
-.modal-err{font-size:11px;color:var(--red);margin-bottom:10px;min-height:16px}
-.btn-primary{background:var(--acc);border:none;color:#09090b;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;padding:12px 24px;cursor:pointer;text-transform:uppercase;width:100%;transition:background .15s}
-.btn-primary:hover{background:#d8ff45}
-.modal-links{display:flex;gap:16px;margin-top:14px;justify-content:center;flex-wrap:wrap}
-.modal-link{font-size:10px;color:var(--mut);text-decoration:none;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--bor);padding-bottom:1px;transition:color .15s}
-.modal-link:hover{color:var(--acc)}
-.modal-security{margin-top:20px;padding:12px;border:1px solid var(--bor);background:rgba(200,241,53,.03)}
-.modal-security-title{font-size:9px;color:var(--acc);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px}
-.modal-security p{font-size:10px;color:var(--dim);line-height:1.6}
+/* NAV */
+#nav{position:sticky;top:0;z-index:100;background:rgba(9,9,11,.93);backdrop-filter:blur(8px);border-bottom:1px solid var(--b1);padding:0 20px}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:52px;gap:12px}
+.logo{display:flex;align-items:center;gap:8px;color:var(--acc);font-weight:700;font-size:14px;letter-spacing:.06em;text-decoration:none;cursor:pointer}
+.logo-box{width:28px;height:28px;border:1.5px solid var(--acc);display:flex;align-items:center;justify-content:center;font-size:14px}
+.nav-links{display:flex;gap:2px}
+.nav-a{background:none;border:none;color:var(--mut);font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:6px 10px;cursor:pointer;text-transform:uppercase;transition:color .15s}
+.nav-a:hover{color:var(--acc)}
+.free-pill{font-size:9px;background:var(--adim);border:1px solid rgba(200,241,53,.3);color:var(--acc);padding:3px 8px;letter-spacing:.1em;text-transform:uppercase}
+.nav-share-btn{background:var(--acc);border:none;color:#09090b;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;padding:6px 14px;cursor:pointer;text-transform:uppercase;transition:background .15s}
+.nav-share-btn:hover{background:#d8ff45}
 
-/* ── LAYOUT ── */
-.app{max-width:900px;margin:0 auto;padding:16px;display:none}
-.nav{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bor);margin-bottom:18px;gap:8px;flex-wrap:wrap}
-.nav-logo{display:flex;align-items:center;gap:8px;color:var(--acc);font-size:13px;font-weight:700;letter-spacing:.08em}
-.nav-logo-box{width:26px;height:26px;border:1.5px solid var(--acc);display:flex;align-items:center;justify-content:center;font-size:12px}
-.nav-right{display:flex;gap:4px;align-items:center}
-.nav-tab{background:none;border:1px solid transparent;color:var(--mut);font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:5px 10px;cursor:pointer;text-transform:uppercase;transition:all .15s}
-.nav-tab:hover{color:var(--tx);border-color:var(--bor2)}
-.nav-tab.on{color:var(--acc);border-color:var(--acc);background:var(--adim)}
-.wl-badge{background:var(--acc);color:#09090b;font-size:9px;font-weight:700;padding:1px 5px;border-radius:9999px;margin-left:3px}
-.nav-key-btn{background:none;border:1px solid var(--bor);color:var(--mut);font-family:var(--mono);font-size:10px;padding:5px 10px;cursor:pointer;text-transform:uppercase;transition:all .15s;letter-spacing:.06em}
-.nav-key-btn:hover{border-color:var(--red);color:var(--red)}
+/* HERO */
+#hero{padding:64px 20px 48px;text-align:center;border-bottom:1px solid var(--b1)}
+.hero-inner{max-width:720px;margin:0 auto}
+.hero-eyebrow{font-size:10px;letter-spacing:.2em;color:var(--acc);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';width:20px;height:1px;background:var(--acc)}
+.hero-h1{font-size:clamp(26px,5vw,50px);font-weight:700;line-height:1.15;margin-bottom:14px;color:var(--tx)}
+.hero-h1 .hi{color:var(--acc)}
+.hero-sub{font-size:13px;color:var(--mut);line-height:1.8;max-width:560px;margin:0 auto 28px}
+.hero-ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+.btn-acc{background:var(--acc);border:none;color:#09090b;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;padding:12px 24px;cursor:pointer;text-transform:uppercase;transition:background .15s}
+.btn-acc:hover{background:#d8ff45}
+.btn-out{background:none;border:1px solid var(--b2);color:var(--mut);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;padding:12px 24px;cursor:pointer;text-transform:uppercase;transition:all .15s}
+.btn-out:hover{border-color:var(--acc);color:var(--acc)}
+.ai-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.ai-badge{font-size:10px;padding:5px 12px;border:1px solid var(--b2);color:var(--mut);display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.06em}
+.ai-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.hero-stats{display:flex;gap:32px;justify-content:center;flex-wrap:wrap}
+.h-stat-num{font-size:22px;font-weight:700;color:var(--acc);text-align:center}
+.h-stat-lbl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;text-align:center}
 
-/* ── SKILL BAR ── */
-.skill-bar-wrap{background:var(--sur);border:1px solid var(--bor);padding:10px 14px;margin-bottom:14px}
-.skill-bar-top{display:flex;justify-content:space-between;margin-bottom:6px}
-.skill-bar-label{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.12em}
-.skill-bar-level{font-size:9px;color:var(--acc);font-weight:700}
-.skill-track{height:3px;background:var(--bor);position:relative;margin-bottom:4px}
-.skill-fill{height:100%;background:var(--acc);transition:width .7s ease}
-.skill-steps-row{display:flex;justify-content:space-between}
-.skill-step-label{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
-.skill-step-label.lit{color:var(--acc)}
+/* MARQUEE */
+.mq-wrap{background:var(--s1);border-top:1px solid var(--b1);border-bottom:1px solid var(--b1);padding:9px 0;overflow:hidden}
+.mq-inner{display:flex;gap:36px;animation:mqscroll 28s linear infinite;width:max-content}
+.mq-item{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mq-tk{font-size:11px;font-weight:700;color:var(--acc);letter-spacing:.08em}
+.mq-val{font-size:10px;color:var(--mut)}
+.mq-up{color:var(--grn)}
+.mq-dn{color:var(--red)}
+@keyframes mqscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
-/* ── SEARCH VIEW ── */
-.search-hero{text-align:center;padding:36px 0 28px}
-.eyebrow{font-size:9px;letter-spacing:.2em;color:var(--acc);text-transform:uppercase;margin-bottom:10px}
-.hero-title{font-size:clamp(22px,4vw,38px);font-weight:700;color:var(--tx);margin-bottom:8px;line-height:1.2}
-.hero-title span{color:var(--acc)}
-.hero-sub{color:var(--mut);font-size:11px;margin-bottom:28px}
-.search-row{display:flex;gap:8px;max-width:500px;margin:0 auto 16px;flex-wrap:wrap}
-.ticker-inp{flex:1;min-width:160px;background:var(--sur);border:1px solid var(--bor);color:var(--tx);font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:.1em;padding:13px 18px;text-transform:uppercase;outline:none;transition:border-color .2s}
+/* MAIN GRID */
+#main{max-width:1100px;margin:0 auto;padding:32px 20px;display:grid;grid-template-columns:1fr 320px;gap:24px}
+@media(max-width:860px){#main{grid-template-columns:1fr}}
+
+/* SECTION LABEL */
+.sec-lbl{font-size:9px;letter-spacing:.18em;color:var(--mut);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--b1)}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--b1);padding:16px;margin-bottom:16px}
+.card2{background:var(--s2);border:1px solid var(--b1);padding:12px}
+
+/* BADGE */
+.badge{font-size:9px;padding:3px 7px;border:1px solid;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.b-acc{color:var(--acc);border-color:rgba(200,241,53,.4)}
+.b-blue{color:var(--blue);border-color:rgba(96,165,250,.4)}
+.b-pur{color:var(--pur);border-color:rgba(167,139,250,.4)}
+.b-grn{color:var(--grn);border-color:rgba(74,222,128,.4)}
+.b-red{color:var(--red);border-color:rgba(248,113,113,.4)}
+.b-org{color:var(--org);border-color:rgba(251,146,60,.4)}
+.b-mut{color:var(--mut);border-color:var(--b2)}
+
+/* PROVIDER SELECTOR */
+.prov-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+@media(max-width:600px){.prov-grid{grid-template-columns:repeat(2,1fr)}}
+.prov-card{background:var(--s1);border:1px solid var(--b1);padding:14px 10px;cursor:pointer;transition:all .15s;text-align:center;position:relative}
+.prov-card:hover{border-color:var(--b2);background:var(--s2)}
+.prov-card.sel{border-color:var(--pc,var(--acc));background:rgba(255,255,255,.025)}
+.prov-card.sel::after{content:'✓';position:absolute;top:5px;right:7px;font-size:9px;color:var(--pc,var(--acc))}
+.prov-icon{font-size:22px;margin-bottom:5px;line-height:1}
+.prov-name{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:3px}
+.prov-card.sel .prov-name{color:var(--pc,var(--acc))}
+.prov-note{font-size:9px;color:var(--mut);line-height:1.4}
+.prov-free{display:inline-block;font-size:8px;background:var(--gdim);color:var(--grn);border:1px solid rgba(74,222,128,.25);padding:2px 5px;text-transform:uppercase;letter-spacing:.06em;margin-top:5px}
+
+/* TONE SELECTOR */
+.tone-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:20px}
+@media(max-width:480px){.tone-grid{grid-template-columns:1fr}}
+.tone-card{background:var(--s1);border:1px solid var(--b1);padding:12px;cursor:pointer;transition:all .15s;display:flex;gap:10px;align-items:flex-start;position:relative}
+.tone-card:hover{border-color:var(--b2);background:var(--s2)}
+.tone-card.sel{border-color:var(--tc,var(--acc));background:rgba(255,255,255,.025)}
+.tone-card.sel::after{content:'✓';position:absolute;top:6px;right:8px;font-size:9px;color:var(--tc,var(--acc))}
+.tone-emoji{font-size:20px;flex-shrink:0;line-height:1;margin-top:1px}
+.tone-name{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:3px}
+.tone-card.sel .tone-name{color:var(--tc,var(--acc))}
+.tone-desc{font-size:9px;color:var(--mut);line-height:1.4}
+.tone-tag{display:inline-block;font-size:8px;padding:2px 5px;border:1px solid var(--b2);color:var(--mut);text-transform:uppercase;letter-spacing:.05em;margin-top:4px}
+
+/* TICKER INPUT */
+.ticker-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.ticker-inp{flex:1;min-width:140px;background:var(--s1);border:1px solid var(--b1);color:var(--tx);font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:.1em;padding:14px 18px;text-transform:uppercase;outline:none;transition:border-color .2s}
 .ticker-inp::placeholder{color:var(--dim);font-size:13px;font-weight:400;text-transform:none;letter-spacing:0}
 .ticker-inp:focus{border-color:var(--acc)}
-.analyze-btn{background:var(--acc);border:none;color:#09090b;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;padding:0 22px;cursor:pointer;text-transform:uppercase;transition:all .15s;min-height:52px;white-space:nowrap}
-.analyze-btn:hover{background:#d8ff45}
-.analyze-btn:disabled{background:var(--dim);color:var(--mut);cursor:not-allowed}
-.quick-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
-.q-tag{background:none;border:1px solid var(--bor);color:var(--mut);font-family:var(--mono);font-size:10px;padding:5px 11px;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.05em}
-.q-tag:hover{border-color:var(--acc);color:var(--acc)}
-.trending-row{font-size:10px;color:var(--dim);text-align:center}
-.trending-row span{color:var(--mut)}
+.gen-btn{background:var(--acc);border:none;color:#09090b;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;padding:0 24px;cursor:pointer;text-transform:uppercase;transition:background .15s;min-height:56px;white-space:nowrap}
+.gen-btn:hover{background:#d8ff45}
+.quick-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.q-chip{background:none;border:1px solid var(--b1);color:var(--mut);font-family:var(--mono);font-size:10px;padding:5px 11px;cursor:pointer;transition:all .15s;text-transform:uppercase}
+.q-chip:hover{border-color:var(--acc);color:var(--acc)}
 
-/* ── LOADING ── */
-.load-wrap{padding:50px 0;text-align:center}
-.load-ticker-big{font-size:30px;font-weight:700;color:var(--acc);letter-spacing:.15em;margin-bottom:6px}
-.load-status{font-size:10px;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px}
-.load-steps{display:flex;flex-direction:column;gap:7px;max-width:260px;margin:0 auto}
-.load-step{display:flex;align-items:center;gap:9px;font-size:10px;color:var(--mut)}
-.load-step.done{color:var(--grn)}
-.load-step.act{color:var(--acc)}
-.ld{width:5px;height:5px;border-radius:50%;background:var(--bor);flex-shrink:0}
-.ld.done{background:var(--grn)}
-.ld.act{background:var(--acc)}
-@keyframes pu{0%,100%{opacity:1}50%{opacity:.3}}
-.ld.act{animation:pu 1s infinite}
+/* PROMPT BOX */
+.prompt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.po-box{background:var(--s2);border:1px solid var(--b1);padding:16px;font-size:11px;line-height:1.75;color:var(--mut);max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;transition:border-color .2s}
+.po-box.lit{border-color:var(--acc)}
+.po-box .hi{color:var(--acc);font-weight:700}
+.po-box::-webkit-scrollbar{width:3px}
+.po-box::-webkit-scrollbar-thumb{background:var(--b2)}
+.po-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.open-ai-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--b1);color:var(--mut);font-family:var(--mono);font-size:10px;padding:7px 12px;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;text-decoration:none;transition:all .15s}
+.open-ai-btn:hover{border-color:var(--b2);color:var(--tx)}
+.ai-btn-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
-/* ── DASHBOARD ── */
-.dash-hdr{background:var(--sur);border:1px solid var(--bor);padding:16px;margin-bottom:12px}
-.dash-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-.dash-co{font-size:19px;font-weight:700;color:var(--tx);margin-bottom:3px}
-.dash-tk{font-size:11px;color:var(--acc);letter-spacing:.15em}
-.dash-sec{font-size:10px;color:var(--mut);margin-top:2px}
-.badges{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-start}
-.badge{font-size:9px;padding:3px 7px;border:1px solid;letter-spacing:.06em;text-transform:uppercase}
-.b-bull{color:var(--grn);border-color:var(--grn)}
-.b-bear{color:var(--red);border-color:var(--red)}
-.b-neu{color:var(--mut);border-color:var(--mut)}
-.b-acc{color:var(--acc);border-color:var(--acc)}
-.b-pur{color:var(--pur);border-color:var(--pur)}
-.b-org{color:var(--org);border-color:var(--org)}
-.scores-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
-.sc-card{background:var(--sur2);border:1px solid var(--bor);padding:12px}
-.sc-label{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
-.sc-val{font-size:20px;font-weight:700}
-.sc-bar{height:2px;background:var(--bor);margin-top:6px}
-.sc-fill{height:100%;transition:width .9s ease}
+/* DEMO SECTION */
+.demo-bar{background:linear-gradient(135deg,rgba(200,241,53,.05),rgba(96,165,250,.05));border:1px solid var(--b2);padding:16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.demo-row{display:flex;gap:8px;flex-wrap:wrap}
+.demo-btn{background:none;border:1px solid var(--b2);color:var(--mut);font-family:var(--mono);font-size:10px;padding:7px 14px;cursor:pointer;text-transform:uppercase;letter-spacing:.06em;transition:all .15s}
+.demo-btn:hover{border-color:var(--acc);color:var(--acc)}
 
-/* ── TABS ── */
-.tab-bar{display:flex;border-bottom:1px solid var(--bor);margin-bottom:14px;overflow-x:auto;gap:0}
-.tab-btn{background:none;border:none;border-bottom:2px solid transparent;color:var(--mut);font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:7px 13px;cursor:pointer;text-transform:uppercase;white-space:nowrap;transition:all .15s}
-.tab-btn:hover{color:var(--tx)}
-.tab-btn.on{color:var(--acc);border-bottom-color:var(--acc)}
-.tab-pane{display:none}
-.tab-pane.on{display:block}
+/* RESULT PREVIEW */
+.result-box{background:var(--s1);border:1px solid var(--b1);margin-bottom:16px;display:none}
+.rp-hdr{padding:14px 16px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.rp-name{font-size:16px;font-weight:700;color:var(--tx)}
+.rp-meta{font-size:10px;color:var(--mut);margin-top:2px}
+.rp-badges{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-start}
+.rp-tabs{display:flex;border-bottom:1px solid var(--b1);overflow-x:auto}
+.rp-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--mut);font-family:var(--mono);font-size:10px;letter-spacing:.07em;padding:9px 13px;cursor:pointer;text-transform:uppercase;white-space:nowrap;transition:all .15s}
+.rp-tab:hover{color:var(--tx)}
+.rp-tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+.rp-body{padding:16px}
+.thesis-quote{border-left:2px solid var(--acc);padding-left:12px;font-size:12px;color:var(--tx);line-height:1.75;margin-bottom:14px}
+.bb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+@media(max-width:500px){.bb-grid{grid-template-columns:1fr}}
+.bb-side{padding:12px;border:1px solid}
+.bb-bull{background:rgba(74,222,128,.03);border-color:rgba(74,222,128,.2)}
+.bb-bear{background:rgba(248,113,113,.03);border-color:rgba(248,113,113,.2)}
+.bb-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.bb-bull .bb-lbl{color:var(--grn)}
+.bb-bear .bb-lbl{color:var(--red)}
+.bb-li{display:flex;gap:7px;margin-bottom:5px;font-size:11px;line-height:1.4}
+.bb-li-dot{width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;flex-shrink:0;margin-top:1px}
+.bb-bull .bb-li-dot{background:var(--gdim);color:var(--grn)}
+.bb-bear .bb-li-dot{background:var(--rdim);color:var(--red)}
+.met-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:6px;margin-bottom:12px}
+.met{background:var(--s2);border:1px solid var(--b1);padding:10px}
+.met-l{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.met-v{font-size:14px;font-weight:700;color:var(--tx)}
+.score-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.score-chip{background:var(--s2);border:1px solid var(--b1);padding:10px 14px;text-align:center;min-width:68px}
+.sc-val{font-size:18px;font-weight:700;line-height:1}
+.sc-lbl{font-size:8px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
+.score-bar-wrap{margin-bottom:8px}
+.score-bar-lbl{display:flex;justify-content:space-between;font-size:9px;color:var(--mut);margin-bottom:4px}
+.score-bar-track{height:4px;background:var(--b1)}
+.score-bar-fill{height:100%;transition:width .8s ease}
+.catalyst-li{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--b1);font-size:11px}
+.catalyst-li:last-child{border-bottom:none}
 
-/* ── CONTENT CARDS ── */
-.sec-title{font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:8px}
-.sec-title::after{content:'';flex:1;height:1px;background:var(--bor)}
-.card{background:var(--sur);border:1px solid var(--bor);padding:14px;margin-bottom:10px}
-.thesis-line{font-size:12px;color:var(--tx);line-height:1.7;border-left:2px solid var(--acc);padding-left:12px}
-.bb-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.bb{padding:12px;border:1px solid}
-.bb.bull{background:rgba(74,222,128,.03);border-color:rgba(74,222,128,.2)}
-.bb.bear{background:rgba(248,113,113,.03);border-color:rgba(248,113,113,.2)}
-.bb-title{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px}
-.bb.bull .bb-title{color:var(--grn)}
-.bb.bear .bb-title{color:var(--red)}
-.bb-item{display:flex;gap:7px;margin-bottom:5px;font-size:11px;color:var(--tx);line-height:1.4}
-.bb-dot{flex-shrink:0;width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;margin-top:1px}
-.bb.bull .bb-dot{background:var(--gdim);color:var(--grn)}
-.bb.bear .bb-dot{background:var(--rdim);color:var(--red)}
-.conf-wrap{display:flex;gap:14px;align-items:center}
-.conf-svg-wrap{position:relative;flex-shrink:0}
-.conf-txt{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
-.conf-num{font-size:16px;font-weight:700}
-.conf-lbl{font-size:8px;color:var(--mut)}
-.met-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px}
-.met-card{background:var(--sur2);border:1px solid var(--bor);padding:11px}
-.met-lbl{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
-.met-val{font-size:14px;font-weight:700;color:var(--tx)}
-.flow-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bor)}
-.flow-item:last-child{border-bottom:none}
-.flow-name{font-size:11px;color:var(--tx)}
-.flow-tag{font-size:9px;padding:2px 6px;border:1px solid;text-transform:uppercase;letter-spacing:.06em}
-.ft-buy{color:var(--grn);border-color:var(--grn)}
-.ft-sell{color:var(--red);border-color:var(--red)}
-.ft-hold{color:var(--mut);border-color:var(--mut)}
-.risk-big{display:flex;align-items:center;gap:14px;margin-bottom:12px}
-.risk-num{font-size:36px;font-weight:700}
-.risk-track{flex:1}
-.risk-band{height:6px;display:flex}
-.risk-seg{flex:1}
-.risk-lbls{display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--dim)}
-.rf-item{display:flex;align-items:center;gap:9px;font-size:10px;margin-bottom:5px}
-.rf-name{flex:1;color:var(--mut)}
-.rf-bar{flex:2;height:3px;background:var(--bor)}
-.rf-fill{height:100%;transition:width .7s ease}
-.rf-val{font-size:9px;color:var(--tx);width:22px;text-align:right}
-.trade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px;margin-bottom:12px}
-.trade-cell{background:var(--sur2);border:1px solid var(--bor);padding:10px}
-.trade-lbl{font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
-.trade-val{font-size:15px;font-weight:700}
-.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.exp-card{background:var(--sur);border:1px solid var(--bor);padding:14px}
-.exp-type{font-size:9px;color:var(--acc);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px}
-.exp-title{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:8px}
-.exp-preview{font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:10px;max-height:64px;overflow:hidden}
-.exp-btn{background:none;border:1px solid var(--bor);color:var(--mut);font-family:var(--mono);font-size:9px;letter-spacing:.08em;padding:6px 10px;cursor:pointer;text-transform:uppercase;transition:all .15s;width:100%}
-.exp-btn:hover{border-color:var(--acc);color:var(--acc)}
-.exp-btn.ok{border-color:var(--grn);color:var(--grn)}
-.wl-item{display:flex;align-items:center;justify-content:space-between;padding:11px;background:var(--sur);border:1px solid var(--bor);margin-bottom:7px;gap:8px;flex-wrap:wrap}
-.wl-tk{font-size:13px;font-weight:700;color:var(--acc);min-width:55px;flex-shrink:0}
-.wl-co{font-size:11px;color:var(--tx);margin-bottom:2px}
-.wl-th{font-size:10px;color:var(--mut);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wl-acts{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.sm-btn{background:none;border:1px solid var(--bor);color:var(--mut);font-family:var(--mono);font-size:9px;padding:4px 8px;cursor:pointer;text-transform:uppercase;transition:all .15s}
-.sm-btn:hover{border-color:var(--acc);color:var(--acc)}
-.del-btn{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:12px;padding:4px;cursor:pointer;transition:color .15s;line-height:1}
-.del-btn:hover{color:var(--red)}
-.add-wl-btn{background:none;border:1px dashed var(--bor2);color:var(--mut);font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:10px;cursor:pointer;text-transform:uppercase;width:100%;margin-top:8px;transition:all .15s}
-.add-wl-btn:hover{border-color:var(--acc);color:var(--acc)}
-.add-wl-btn:disabled{color:var(--dim);border-color:var(--bor);cursor:default}
-.wl-empty{text-align:center;padding:36px;color:var(--dim);font-size:11px}
-.share-btn{background:none;border:1px solid var(--bor2);color:var(--mut);font-family:var(--mono);font-size:9px;padding:7px 14px;cursor:pointer;text-transform:uppercase;transition:all .15s;letter-spacing:.06em}
-.share-btn:hover{border-color:var(--blue);color:var(--blue)}
-.edu-item{display:flex;gap:12px;padding:14px;border-left:2px solid var(--bor);margin-left:8px;position:relative;margin-bottom:0}
-.edu-item::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--bor);position:absolute;left:-5px;top:20px;border:2px solid var(--bg)}
-.edu-item.lit{border-left-color:var(--acc)}
-.edu-item.lit::before{background:var(--acc)}
-.edu-item.cur{border-left-color:var(--blue)}
-.edu-item.cur::before{background:var(--blue)}
-.edu-num{font-size:9px;color:var(--mut);flex-shrink:0;margin-top:2px;width:18px}
-.edu-title{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:3px}
-.edu-item.locked .edu-title{color:var(--dim)}
-.edu-desc{font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:6px}
-.edu-skills{display:flex;flex-wrap:wrap;gap:4px}
-.edu-sk{font-size:8px;padding:2px 6px;border:1px solid;letter-spacing:.05em;text-transform:uppercase}
-.lit .edu-sk{color:var(--acc);border-color:var(--adim)}
-.cur .edu-sk{color:var(--blue);border-color:var(--bdim)}
-.locked .edu-sk{color:var(--dim);border-color:var(--bor)}
-.hint{font-size:9px;color:var(--dim);margin-top:5px}
+/* SHARE CARDS */
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+@media(max-width:500px){.share-grid{grid-template-columns:1fr}}
+.share-card{background:var(--s2);border:1px solid var(--b1);padding:14px}
+.sh-type{font-size:9px;color:var(--acc);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px}
+.sh-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:8px}
+.sh-preview{font-size:10px;color:var(--mut);line-height:1.5;margin-bottom:10px;max-height:58px;overflow:hidden}
+.sh-btn{background:none;border:1px solid var(--b1);color:var(--mut);font-family:var(--mono);font-size:9px;letter-spacing:.07em;padding:6px 10px;cursor:pointer;text-transform:uppercase;transition:all .15s;width:100%}
+.sh-btn:hover{border-color:var(--acc);color:var(--acc)}
+.sh-btn.ok{border-color:var(--grn);color:var(--grn)}
+
+/* SIDEBAR */
+.how-step{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--b1)}
+.how-step:last-child{border-bottom:none}
+.hs-n{width:20px;height:20px;border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--acc);flex-shrink:0;margin-top:1px}
+.hs-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.hs-desc{font-size:10px;color:var(--mut);line-height:1.5}
+
+/* SKILL BAR */
+.skill-wrap{margin-bottom:14px}
+.skill-meta{display:flex;justify-content:space-between;margin-bottom:5px}
+.skill-track{height:4px;background:var(--b1)}
+.skill-fill{height:100%;background:var(--acc);transition:width .8s ease}
+.skill-nodes{display:flex;justify-content:space-between;margin-top:4px}
+.skn{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+.skn.lit{color:var(--acc)}
+.edu-row{display:flex;gap:10px;padding:10px;background:var(--s1);border:1px solid var(--b1);margin-bottom:7px;cursor:pointer;transition:all .15s}
+.edu-row:hover{border-color:var(--b2)}
+.edu-row.done{border-left:2px solid var(--acc)}
+.edu-row.locked{opacity:.45;cursor:default}
+.edu-emo{font-size:16px;flex-shrink:0}
+.edu-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.edu-sub{font-size:9px;color:var(--mut)}
+.edu-pts{font-size:9px;color:var(--acc);margin-left:auto;flex-shrink:0}
+
+/* TRENDING */
+.trend-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--b1);cursor:pointer}
+.trend-item:last-child{border-bottom:none}
+.trend-item:hover .trend-tk{color:var(--acc)}
+.trend-rank{font-size:9px;color:var(--dim);width:16px;flex-shrink:0}
+.trend-tk{font-size:12px;font-weight:700;color:var(--tx);transition:color .12s;flex:1;margin-left:8px}
+
+/* FEEDBACK */
+.fb-q{font-size:11px;color:var(--tx);margin-bottom:7px}
+.fb-stars{display:flex;gap:4px;margin-bottom:12px}
+.fb-star{background:none;border:none;font-size:22px;cursor:pointer;color:var(--dim);transition:color .1s;padding:0;line-height:1}
+.fb-star:hover,.fb-star.lit{color:var(--gold)}
+.fb-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.fb-chip{background:none;border:1px solid var(--b1);color:var(--mut);font-family:var(--mono);font-size:9px;padding:4px 8px;cursor:pointer;transition:all .12s;text-transform:uppercase;letter-spacing:.05em}
+.fb-chip:hover,.fb-chip.sel{border-color:var(--acc);color:var(--acc);background:var(--adim)}
+.fb-inp{width:100%;background:var(--s2);border:1px solid var(--b1);color:var(--tx);font-family:var(--mono);font-size:11px;padding:10px 12px;resize:vertical;outline:none;min-height:72px;transition:border-color .2s}
+.fb-inp:focus{border-color:var(--acc)}
+.fb-submit{background:var(--acc);border:none;color:#09090b;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;padding:10px;cursor:pointer;text-transform:uppercase;width:100%;margin-top:8px;transition:background .15s}
+.fb-submit:hover{background:#d8ff45}
+.fb-sent{font-size:10px;color:var(--grn);text-align:center;padding:8px;display:none}
+
+/* COMMUNITY */
+.community-card{background:linear-gradient(135deg,rgba(200,241,53,.05),rgba(96,165,250,.05));border:1px solid var(--b2);padding:16px;text-align:center}
+.cc-icon{font-size:28px;margin-bottom:8px}
+.cc-title{font-size:13px;font-weight:700;color:var(--tx);margin-bottom:6px}
+.cc-sub{font-size:10px;color:var(--mut);line-height:1.65;margin-bottom:12px}
+.share-btn-li{background:var(--acc);border:none;color:#09090b;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;padding:10px;cursor:pointer;text-transform:uppercase;width:100%;margin-bottom:6px;transition:background .15s}
+.share-btn-li:hover{background:#d8ff45}
+.share-btn-tw{background:none;border:1px solid var(--b2);color:var(--mut);font-family:var(--mono);font-size:10px;letter-spacing:.08em;padding:9px;cursor:pointer;text-transform:uppercase;width:100%;margin-bottom:6px;transition:all .15s}
+.share-btn-tw:hover{border-color:var(--acc);color:var(--acc)}
+
+/* TOAST */
 .toast-wrap{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:6px;z-index:9999;pointer-events:none}
 .tst{background:var(--acc);color:#09090b;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;padding:9px 14px;text-transform:uppercase;transform:translateX(120px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1)}
 .tst.show{transform:translateX(0);opacity:1}
-.err-msg{font-size:11px;color:var(--red);background:var(--rdim);border:1px solid rgba(248,113,113,.2);padding:12px 14px;margin-bottom:12px;line-height:1.5;display:none}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--bor2)}
-.sent-bar-wrap{margin-bottom:10px}
-.sent-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--mut);margin-bottom:4px}
-.sent-track{height:6px;background:var(--bor)}
-.sent-fill{height:100%;transition:width .8s}
-.sent-val{font-size:20px;font-weight:700;margin-top:6px}
-.sent-sub{font-size:10px;color:var(--mut);margin-top:2px}
-@media(max-width:580px){.bb-grid,.exp-grid{grid-template-columns:1fr}.scores-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* FOOTER */
+footer{border-top:1px solid var(--b1);padding:24px 20px;margin-top:24px}
+.footer-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.footer-links{display:flex;gap:16px;flex-wrap:wrap}
+.footer-links a{font-size:10px;color:var(--mut);text-decoration:none;text-transform:uppercase;letter-spacing:.08em;transition:color .12s}
+.footer-links a:hover{color:var(--acc)}
 </style>
 </head>
 <body>
 
-<!-- ── LOGIN MODAL ── -->
-<div id="modal-overlay">
-  <div class="modal">
-    <div class="modal-logo">
-      <div class="modal-logo-box">Σ</div>
-      <span style="color:var(--acc);font-weight:700;font-size:13px;letter-spacing:.08em">AI Investment OS</span>
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="logo" onclick="window.scrollTo(0,0)">
+      <div class="logo-box">Σ</div>AI Investment OS
     </div>
-    <div class="modal-title">Connect your Anthropic account</div>
-    <div class="modal-sub">Enter your API key to use Claude for institutional-grade stock research. Your key is never stored — it clears when you close this tab.</div>
-    <div class="modal-steps">
-      <div class="modal-step"><div class="step-n">1</div><span>Go to <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:var(--acc)">console.anthropic.com</a> — create a free account if needed</span></div>
-      <div class="modal-step"><div class="step-n">2</div><span>Click "API Keys" in the left sidebar → "Create Key"</span></div>
-      <div class="modal-step"><div class="step-n">3</div><span>Copy your key (starts with <code style="color:var(--acc)">sk-ant-</code>) and paste below</span></div>
+    <div class="nav-links">
+      <button class="nav-a" onclick="document.getElementById('howsec').scrollIntoView({behavior:'smooth'})">How It Works</button>
+      <button class="nav-a" onclick="document.getElementById('edusec').scrollIntoView({behavior:'smooth'})">Learn</button>
+      <button class="nav-a" onclick="document.getElementById('fbsec').scrollIntoView({behavior:'smooth'})">Feedback</button>
     </div>
-    <input class="modal-inp" id="key-inp" type="password" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
-    <div class="modal-err" id="key-err"></div>
-    <button class="btn-primary" onclick="submitKey()">Connect Account →</button>
-    <div class="modal-links">
-      <a href="https://console.anthropic.com" target="_blank" rel="noopener" class="modal-link">Get API Key</a>
-      <a href="https://www.anthropic.com/pricing" target="_blank" rel="noopener" class="modal-link">Anthropic Pricing</a>
-      <a href="https://patluri9.github.io/institutional-stock-analyst-prompt/" target="_blank" rel="noopener" class="modal-link">About this tool</a>
-    </div>
-    <div class="modal-security">
-      <div class="modal-security-title">Security &amp; Privacy</div>
-      <p>Your API key is stored in browser session memory only (sessionStorage). It is automatically cleared when you close this tab. It is only ever sent directly to Anthropic's API — never to any third-party server. This tool is open source; inspect the code at any time.</p>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="free-pill">100% Free</span>
+      <button class="nav-share-btn" onclick="shareLinkedIn()">Share Tool</button>
     </div>
   </div>
-</div>
+</nav>
 
-<!-- ── MAIN APP ── -->
-<div class="app" id="app">
-  <nav class="nav">
-    <div class="nav-logo"><div class="nav-logo-box">Σ</div>AI Investment OS</div>
-    <div class="nav-right">
-      <button class="nav-tab on" onclick="setView('search')">Research</button>
-      <button class="nav-tab" onclick="setView('watchlist')">Watchlist<span class="wl-badge" id="wl-badge">0</span></button>
-      <button class="nav-tab" onclick="setView('education')">Skill Path</button>
-      <button class="nav-key-btn" onclick="logout()" title="Disconnect API key">⏻ Logout</button>
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Open Source &middot; Zero Login &middot; Zero Cost</div>
+    <h1 class="hero-h1">Stop watching. <span class="hi">Start analyzing.</span></h1>
+    <p class="hero-sub">Pick your AI. Pick your analyst persona. Enter a ticker. Get a complete investment thesis in 30 seconds — from beginner-friendly to hedge-fund precision.</p>
+    <div class="hero-ctas">
+      <button class="btn-acc" onclick="document.getElementById('researchsec').scrollIntoView({behavior:'smooth'})">Start Researching &rarr;</button>
+      <button class="btn-out" onclick="loadDemo('NVDA','institutional')">&#9654; See Live Demo</button>
     </div>
-  </nav>
-
-  <div class="skill-bar-wrap">
-    <div class="skill-bar-top">
-      <span class="skill-bar-label">Investor skill level</span>
-      <span class="skill-bar-level" id="sk-level">Novice</span>
+    <div class="ai-badges">
+      <div class="ai-badge"><div class="ai-dot" style="background:#cc7a2a"></div>Claude</div>
+      <div class="ai-badge"><div class="ai-dot" style="background:#74aa9c"></div>ChatGPT</div>
+      <div class="ai-badge"><div class="ai-dot" style="background:#4285f4"></div>Gemini</div>
+      <div class="ai-badge"><div class="ai-dot" style="background:#9b5de5"></div>Perplexity</div>
     </div>
-    <div class="skill-track"><div class="skill-fill" id="sk-fill" style="width:2%"></div></div>
-    <div class="skill-steps-row">
-      <span class="skill-step-label lit">Novice</span>
-      <span class="skill-step-label" id="ss1">Beginner</span>
-      <span class="skill-step-label" id="ss2">Intermediate</span>
-      <span class="skill-step-label" id="ss3">Advanced</span>
-      <span class="skill-step-label" id="ss4">Expert</span>
+    <div class="hero-stats">
+      <div><div class="h-stat-num">8</div><div class="h-stat-lbl">Analyst Personas</div></div>
+      <div><div class="h-stat-num">4</div><div class="h-stat-lbl">AI Providers</div></div>
+      <div><div class="h-stat-num">&infin;</div><div class="h-stat-lbl">Searches</div></div>
+      <div><div class="h-stat-num">$0</div><div class="h-stat-lbl">Forever</div></div>
     </div>
   </div>
+</section>
 
-  <!-- SEARCH -->
-  <div id="v-search">
-    <div class="search-hero">
-      <div class="eyebrow">AI-Powered Investment OS</div>
-      <div class="hero-title">Research like a <span>hedge fund.</span><br>Invest like an expert.</div>
-      <div class="hero-sub">Ticker → full AI analysis → shareable report. 30 seconds.</div>
-      <div class="search-row">
-        <input class="ticker-inp" id="t-inp" placeholder="Enter ticker (e.g. NVDA)" maxlength="10" spellcheck="false" autocomplete="off" onkeydown="if(event.key==='Enter')run()">
-        <button class="analyze-btn" id="a-btn" onclick="run()">Analyze →</button>
+<!-- MARQUEE -->
+<div class="mq-wrap"><div class="mq-inner" id="mq"></div></div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT PANEL -->
+  <div>
+
+    <!-- STEP 1 -->
+    <div id="researchsec">
+      <div class="sec-lbl">Step 1 &mdash; Choose your AI (all free)</div>
+      <div class="prov-grid" id="prov-grid"></div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div>
+      <div class="sec-lbl">Step 2 &mdash; Pick your analyst persona</div>
+      <div class="tone-grid" id="tone-grid"></div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div>
+      <div class="sec-lbl">Step 3 &mdash; Enter ticker &amp; generate</div>
+      <div class="ticker-row">
+        <input class="ticker-inp" id="t-inp" placeholder="NVDA, AAPL, TSLA..." maxlength="10" spellcheck="false" autocomplete="off" onkeydown="if(event.key==='Enter')generate()">
+        <button class="gen-btn" onclick="generate()">Generate Prompt &rarr;</button>
       </div>
-      <div class="err-msg" id="search-err"></div>
       <div class="quick-row">
-        <span style="font-size:9px;color:var(--dim);align-self:center;text-transform:uppercase;letter-spacing:.1em">Try:</span>
-        <button class="q-tag" onclick="qt('NVDA')">NVDA</button>
-        <button class="q-tag" onclick="qt('AAPL')">AAPL</button>
-        <button class="q-tag" onclick="qt('TSLA')">TSLA</button>
-        <button class="q-tag" onclick="qt('MSFT')">MSFT</button>
-        <button class="q-tag" onclick="qt('META')">META</button>
-        <button class="q-tag" onclick="qt('AMZN')">AMZN</button>
+        <span style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em">Try:</span>
+        <button class="q-chip" onclick="qt('NVDA')">NVDA</button>
+        <button class="q-chip" onclick="qt('AAPL')">AAPL</button>
+        <button class="q-chip" onclick="qt('TSLA')">TSLA</button>
+        <button class="q-chip" onclick="qt('MSFT')">MSFT</button>
+        <button class="q-chip" onclick="qt('META')">META</button>
+        <button class="q-chip" onclick="qt('AMZN')">AMZN</button>
+        <button class="q-chip" onclick="qt('AMD')">AMD</button>
+        <button class="q-chip" onclick="qt('GOOGL')">GOOGL</button>
       </div>
-      <div class="trending-row" id="trending-row"></div>
     </div>
-  </div>
 
-  <!-- LOADING -->
-  <div id="v-loading" style="display:none">
-    <div class="load-wrap">
-      <div class="load-ticker-big" id="l-ticker"></div>
-      <div class="load-status" id="l-status">Initializing...</div>
-      <div class="load-steps" id="l-steps"></div>
-    </div>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="v-dashboard" style="display:none">
-    <div class="dash-hdr">
-      <div class="dash-top-row">
-        <div><div class="dash-co" id="d-co"></div><div class="dash-tk" id="d-tk"></div><div class="dash-sec" id="d-sec"></div></div>
-        <div class="badges" id="d-badges"></div>
+    <!-- PROMPT OUTPUT -->
+    <div style="margin-bottom:16px">
+      <div class="prompt-header">
+        <div class="sec-lbl" style="margin-bottom:0">Generated prompt</div>
+        <button onclick="copyPrompt()" style="background:none;border:1px solid var(--b2);color:var(--mut);font-family:var(--mono);font-size:10px;padding:5px 12px;cursor:pointer;text-transform:uppercase;letter-spacing:.07em;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mut)'">Copy Prompt</button>
       </div>
-      <div class="scores-grid" id="d-scores"></div>
+      <div class="po-box" id="po-box">Pick a provider, persona, and ticker above &mdash; your optimized prompt appears here.</div>
+      <div class="po-actions" id="po-actions">
+        <a class="open-ai-btn" href="https://claude.ai" target="_blank" rel="noopener"><div class="ai-btn-dot" style="background:#cc7a2a"></div>Open Claude</a>
+        <a class="open-ai-btn" href="https://chatgpt.com" target="_blank" rel="noopener"><div class="ai-btn-dot" style="background:#74aa9c"></div>Open ChatGPT</a>
+        <a class="open-ai-btn" href="https://gemini.google.com" target="_blank" rel="noopener"><div class="ai-btn-dot" style="background:#4285f4"></div>Open Gemini</a>
+        <a class="open-ai-btn" href="https://www.perplexity.ai" target="_blank" rel="noopener"><div class="ai-btn-dot" style="background:#9b5de5"></div>Open Perplexity</a>
+      </div>
     </div>
-    <div class="tab-bar">
-      <button class="tab-btn on" onclick="setTab('overview')">Overview</button>
-      <button class="tab-btn" onclick="setTab('fundamentals')">Fundamentals</button>
-      <button class="tab-btn" onclick="setTab('institutional')">Inst. Flow</button>
-      <button class="tab-btn" onclick="setTab('risk')">Risk</button>
-      <button class="tab-btn" onclick="setTab('trading')">Trade Plan</button>
-      <button class="tab-btn" onclick="setTab('export')">Content Engine</button>
+
+    <!-- DEMO BAR -->
+    <div class="demo-bar" id="demo-bar">
+      <div>
+        <strong style="font-size:12px;color:var(--tx);display:block;margin-bottom:3px">See what a real analysis looks like &rarr;</strong>
+        <span style="font-size:10px;color:var(--mut)">Click a demo to preview before running yours</span>
+      </div>
+      <div class="demo-row">
+        <button class="demo-btn" onclick="loadDemo('NVDA','institutional')">NVDA Demo</button>
+        <button class="demo-btn" onclick="loadDemo('AAPL','value')">AAPL Value Demo</button>
+        <button class="demo-btn" onclick="loadDemo('TSLA','contrarian')">TSLA Bear Demo</button>
+      </div>
     </div>
-    <div class="tab-pane on" id="tp-overview">
-      <div class="sec-title">AI investment thesis</div>
-      <div class="card"><div class="thesis-line" id="d-thesis"></div></div>
-      <div class="sec-title">Bull vs bear case</div>
-      <div class="bb-grid" id="d-bb"></div>
-      <div class="sec-title" style="margin-top:10px">Confidence + sentiment</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="card">
-          <div style="font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">AI confidence meter</div>
-          <div class="conf-wrap">
-            <div class="conf-svg-wrap">
-              <svg width="72" height="72" viewBox="0 0 72 72">
-                <circle cx="36" cy="36" r="30" fill="none" stroke="#1f1f25" stroke-width="7"/>
-                <circle cx="36" cy="36" r="30" fill="none" stroke="#c8f135" stroke-width="7" stroke-linecap="round" stroke-dasharray="188.5" id="conf-arc" stroke-dashoffset="188.5" transform="rotate(-90 36 36)"/>
-              </svg>
-              <div class="conf-txt"><div class="conf-num" id="conf-n"></div><div class="conf-lbl">/10</div></div>
-            </div>
-            <div id="conf-det" style="flex:1;font-size:10px;color:var(--mut);line-height:1.6"></div>
-          </div>
+
+    <!-- RESULT PREVIEW -->
+    <div class="result-box" id="result-box">
+      <div class="rp-hdr">
+        <div>
+          <div class="rp-name" id="rp-name"></div>
+          <div class="rp-meta" id="rp-meta"></div>
         </div>
-        <div class="card">
-          <div style="font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Sentiment gauge</div>
-          <div id="d-sent"></div>
-        </div>
+        <div class="rp-badges" id="rp-badges"></div>
+      </div>
+      <div class="rp-tabs">
+        <button class="rp-tab on" onclick="rpTab('overview',this)">Overview</button>
+        <button class="rp-tab" onclick="rpTab('metrics',this)">Metrics</button>
+        <button class="rp-tab" onclick="rpTab('scores',this)">Scores</button>
+        <button class="rp-tab" onclick="rpTab('share',this)">Share</button>
+      </div>
+      <div class="rp-body" id="rp-body"></div>
+    </div>
+
+    <!-- SHARE SECTION -->
+    <div id="share-sec" style="display:none">
+      <div class="sec-lbl" style="margin-top:8px">Content engine &mdash; share your research</div>
+      <div class="share-grid" id="share-grid"></div>
+    </div>
+
+  </div><!-- /left -->
+
+  <!-- SIDEBAR -->
+  <div>
+
+    <!-- HOW IT WORKS -->
+    <div class="card" id="howsec">
+      <div class="sec-lbl">How it works</div>
+      <div class="how-step"><div class="hs-n">1</div><div><div class="hs-title">Choose your AI</div><div class="hs-desc">Claude, ChatGPT, Gemini, or Perplexity &mdash; all free to use.</div></div></div>
+      <div class="how-step"><div class="hs-n">2</div><div><div class="hs-title">Pick a persona</div><div class="hs-desc">8 analyst styles. Each gives a completely different lens on the same stock.</div></div></div>
+      <div class="how-step"><div class="hs-n">3</div><div><div class="hs-title">Enter your ticker</div><div class="hs-desc">Any stock symbol. An AI-optimized prompt auto-generates instantly.</div></div></div>
+      <div class="how-step"><div class="hs-n">4</div><div><div class="hs-title">Copy &amp; paste</div><div class="hs-desc">Open your AI with <strong>web search ON</strong>. Paste the prompt. Run it.</div></div></div>
+      <div class="how-step"><div class="hs-n">5</div><div><div class="hs-title">Share your analysis</div><div class="hs-desc">Use the content engine to generate LinkedIn posts, tweets, and video scripts.</div></div></div>
+    </div>
+
+    <!-- TRENDING -->
+    <div class="card">
+      <div class="sec-lbl">Trending this session</div>
+      <div id="trend-list">
+        <div class="trend-item" onclick="qt('NVDA')"><span class="trend-rank">1</span><span class="trend-tk">NVDA</span><span class="badge b-grn">Hot</span></div>
+        <div class="trend-item" onclick="qt('TSLA')"><span class="trend-rank">2</span><span class="trend-tk">TSLA</span><span class="badge b-org">Volatile</span></div>
+        <div class="trend-item" onclick="qt('AAPL')"><span class="trend-rank">3</span><span class="trend-tk">AAPL</span><span class="badge b-blue">Stable</span></div>
+        <div class="trend-item" onclick="qt('META')"><span class="trend-rank">4</span><span class="trend-tk">META</span><span class="badge b-acc">AI Play</span></div>
+        <div class="trend-item" onclick="qt('MSFT')"><span class="trend-rank">5</span><span class="trend-tk">MSFT</span><span class="badge b-acc">AI Play</span></div>
       </div>
     </div>
-    <div class="tab-pane" id="tp-fundamentals">
-      <div class="sec-title">Key metrics</div>
-      <div class="met-grid" id="d-mets"></div>
-      <div class="sec-title" style="margin-top:10px">Earnings summary</div>
-      <div class="card"><div id="d-earn" style="font-size:11px;color:var(--tx);line-height:1.7"></div></div>
-      <div class="sec-title" style="margin-top:10px">Hidden risks</div>
-      <div class="card" id="d-hidden"></div>
-    </div>
-    <div class="tab-pane" id="tp-institutional">
-      <div class="sec-title">Institutional flow</div>
-      <div class="card" id="d-flow"></div>
-      <div class="sec-title" style="margin-top:10px">Insider activity</div>
-      <div class="card"><div id="d-insider" style="font-size:11px;color:var(--tx);line-height:1.6"></div></div>
-    </div>
-    <div class="tab-pane" id="tp-risk">
-      <div class="sec-title">Risk score breakdown</div>
-      <div class="card">
-        <div class="risk-big">
-          <div><div class="risk-num" id="risk-n"></div><div style="font-size:9px;color:var(--mut)">/10 risk</div></div>
-          <div class="risk-track" style="flex:1">
-            <div class="risk-band">
-              <div class="risk-seg" style="background:rgba(74,222,128,.25)"></div>
-              <div class="risk-seg" style="background:rgba(251,191,36,.25)"></div>
-              <div class="risk-seg" style="background:rgba(251,146,60,.25)"></div>
-              <div class="risk-seg" style="background:rgba(248,113,113,.25)"></div>
-            </div>
-            <div class="risk-lbls"><span>Low</span><span>Moderate</span><span>High</span><span>Critical</span></div>
-          </div>
+
+    <!-- SKILL PATH -->
+    <div class="card" id="edusec">
+      <div class="sec-lbl">Your investor skill path</div>
+      <div class="skill-wrap">
+        <div class="skill-meta">
+          <span style="font-size:9px;color:var(--mut);text-transform:uppercase;letter-spacing:.1em">Level</span>
+          <span style="font-size:9px;color:var(--acc);font-weight:700" id="sk-lbl">Novice (0 pts)</span>
         </div>
-        <div id="d-rfs"></div>
+        <div class="skill-track"><div class="skill-fill" id="sk-fill" style="width:2%"></div></div>
+        <div class="skill-nodes">
+          <span class="skn lit">Novice</span>
+          <span class="skn" id="sn1">Beginner</span>
+          <span class="skn" id="sn2">Pro</span>
+          <span class="skn" id="sn3">Expert</span>
+        </div>
       </div>
+      <div id="edu-list"></div>
     </div>
-    <div class="tab-pane" id="tp-trading">
-      <div class="sec-title">Trade setup</div>
-      <div class="card"><div class="trade-grid" id="d-trade"></div><div id="d-trade-sub" style="font-size:10px;color:var(--mut)"></div></div>
-      <div class="sec-title" style="margin-top:10px">Catalysts</div>
-      <div class="card" id="d-cats"></div>
-    </div>
-    <div class="tab-pane" id="tp-export">
-      <div class="sec-title">Content engine — one analysis, four formats</div>
-      <div class="exp-grid" id="d-exp"></div>
-      <div class="sec-title" style="margin-top:10px">Watchlist</div>
-      <button class="add-wl-btn" id="add-wl-btn" onclick="addWL()">+ Add to watchlist</button>
-    </div>
-  </div>
 
-  <!-- WATCHLIST -->
-  <div id="v-watchlist" style="display:none">
-    <div class="sec-title">Watchlist</div>
-    <div id="wl-list"></div>
-    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="share-btn" onclick="shareWL()">Share Watchlist URL</button>
-      <button class="analyze-btn" style="padding:10px 18px;font-size:11px" onclick="setView('search')">+ Research a stock</button>
+    <!-- FEEDBACK -->
+    <div class="card" id="fbsec">
+      <div class="sec-lbl">Help us improve</div>
+      <div class="fb-q">How useful was this tool?</div>
+      <div class="fb-stars" id="fb-stars">
+        <button class="fb-star" onclick="setStar(1)">&#9733;</button>
+        <button class="fb-star" onclick="setStar(2)">&#9733;</button>
+        <button class="fb-star" onclick="setStar(3)">&#9733;</button>
+        <button class="fb-star" onclick="setStar(4)">&#9733;</button>
+        <button class="fb-star" onclick="setStar(5)">&#9733;</button>
+      </div>
+      <div class="fb-q">What would you add next?</div>
+      <div class="fb-chips" id="fb-chips">
+        <button class="fb-chip" onclick="toggleChip(this)">Portfolio tracker</button>
+        <button class="fb-chip" onclick="toggleChip(this)">Earnings alerts</button>
+        <button class="fb-chip" onclick="toggleChip(this)">More personas</button>
+        <button class="fb-chip" onclick="toggleChip(this)">Crypto support</button>
+        <button class="fb-chip" onclick="toggleChip(this)">PDF export</button>
+        <button class="fb-chip" onclick="toggleChip(this)">Watchlist save</button>
+        <button class="fb-chip" onclick="toggleChip(this)">Options flow</button>
+        <button class="fb-chip" onclick="toggleChip(this)">ETF screener</button>
+      </div>
+      <textarea class="fb-inp" id="fb-txt" placeholder="Anything else? (optional)"></textarea>
+      <button class="fb-submit" onclick="submitFeedback()">Send Feedback</button>
+      <div class="fb-sent" id="fb-sent">&#10003; Thank you! Your feedback shapes the roadmap.</div>
+    </div>
+
+    <!-- COMMUNITY -->
+    <div class="community-card">
+      <div class="cc-icon">&#127760;</div>
+      <div class="cc-title">Share this tool</div>
+      <div class="cc-sub">Every retail investor deserves institutional-grade research. Help spread the word &mdash; it&apos;s free forever.</div>
+      <button class="share-btn-li" onclick="shareLinkedIn()">Share on LinkedIn</button>
+      <button class="share-btn-tw" onclick="shareTweet()">Share on X / Twitter</button>
+      <button class="share-btn-tw" onclick="copyLink()">Copy Link</button>
+    </div>
+
+  </div><!-- /sidebar -->
+</div><!-- /main -->
+
+<footer>
+  <div class="footer-inner">
+    <span style="font-size:10px;color:var(--dim)">MIT License &middot; Open Source &middot; Free Forever &middot; Built by <a href="https://github.com/Patluri9" style="color:var(--acc);text-decoration:none" target="_blank" rel="noopener">@Patluri9</a></span>
+    <div class="footer-links">
+      <a href="https://github.com/Patluri9/institutional-stock-analyst-prompt" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Patluri9/institutional-stock-analyst-prompt/blob/main/docs/BACKTEST_METHODOLOGY.md" target="_blank" rel="noopener">Backtest Guide</a>
+      <a href="https://github.com/Patluri9/institutional-stock-analyst-prompt/blob/main/docs/PROMPT_ENGINEERING.md" target="_blank" rel="noopener">How Prompts Work</a>
     </div>
   </div>
-
-  <!-- EDUCATION -->
-  <div id="v-education" style="display:none">
-    <div class="sec-title">Your investor skill path</div>
-    <div id="edu-path"></div>
-  </div>
-</div>
+</footer>
 
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script>
-// ── SECURITY UTILITIES ──────────────────────────────────────────────
-function san(str) {
-  if (typeof str !== 'string') return '';
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
-}
-function validTicker(t) { return /^[A-Z0-9.\-\^]{1,10}$/i.test(t.trim()); }
-function validKey(k) { return typeof k === 'string' && /^sk-ant-[A-Za-z0-9\-_]{20,}$/.test(k.trim()); }
+// ── PROVIDERS ────────────────────────────────────────────────────────
+var PROVIDERS = [
+  {id:'claude',icon:'🟠',name:'Claude',note:'Best deep research. Enable web search in settings.',free:'Free tier available',color:'#cc7a2a'},
+  {id:'chatgpt',icon:'🟢',name:'ChatGPT',note:'GPT-4o with browsing. Great for analysis.',free:'Free with account',color:'#74aa9c'},
+  {id:'gemini',icon:'🔵',name:'Gemini',note:'Google AI with real-time search built in.',free:'Free with Google',color:'#4285f4'},
+  {id:'perplexity',icon:'🟣',name:'Perplexity',note:'Built-in web search. Fast and thorough.',free:'Free searches daily',color:'#9b5de5'}
+];
 
-// ── SESSION (API KEY — sessionStorage only) ─────────────────────────
-const KEY_NAME = '_aios_k';
-function getKey() { try { return sessionStorage.getItem(KEY_NAME) || ''; } catch(e){ return ''; } }
-function saveKey(k) { try { sessionStorage.setItem(KEY_NAME, k); } catch(e){} }
-function clearKey() { try { sessionStorage.removeItem(KEY_NAME); } catch(e){} }
+// ── ANALYST PERSONAS ─────────────────────────────────────────────────
+var TONES = [
+  {id:'institutional',emoji:'🏛️',name:'Institutional Analyst',color:'#c8f135',tag:'Hedge Fund',desc:'Goldman Sachs desk. Precise, data-dense, signal over noise.',
+   prompt:function(tk,prov){return 'You are an institutional equity analyst. Analyze '+tk+' with the depth of a Goldman Sachs research desk.\n\nFIRST: Use web search to retrieve current price, 52W range, latest earnings beat/miss, guidance, analyst actions (last 30d), material news (last 14d), insider transactions, institutional ownership change.\n\n1. BUSINESS THESIS\nOne-sentence model. Revenue mix. AI/cloud exposure (real or narrative?). TAM direction. Valuation verdict. Direct bull or bear call.\n\n2. PEER COMPARISON\nAuto-identify top 3 competitors. Compare revenue growth, gross margin, FCF yield, forward P/E, moat durability. Is '+tk+' the best risk-adjusted play in the group?\n\n3. FUNDAMENTALS\nEarnings quality (4-quarter beat/miss pattern), SBC as % of revenue, debt maturity risk, customer concentration risk, what management is avoiding discussing.\n\n4. TECHNICAL SETUP\nPrice vs 21/50/200 EMAs. RSI + MACD. Relative strength vs sector ETF. Key support/resistance. Overextended or healthy entry opportunity?\n\n5. OPTIONS & FLOW\nUnusual sweeps, IV rank, put/call ratio, dark pool signal, smart money direction. Best trade structure for current setup.\n\n6. MACRO RISKS\nRate sensitivity, China/tariff exposure, AI capex cycle risk, recession sensitivity. Rate each High/Medium/Low.\n\n7. TRADING PLAN\nBias: Bullish/Neutral/Bearish\nEntry zone | Stop-loss | Target 1 | Target 2 | R/R ratio | Hold period\n\nFINAL SUMMARY (bullets only):\n- Bull case x3\n- Bear case x3\n- Hidden risk (1-2 non-obvious)\n- Key catalyst next 30-90 days\n- Best entry | Resistance levels | Support levels\n- 3-month outlook | 1-year outlook\n- Conviction score /10 with one-line reason\n- Thesis invalidation\n\nRULES: Bullets only. No disclaimers. No beginner explanations. Max 2 lines per point. Signal over filler.\n\n[Enable web search in '+prov+' for live data]';}},
 
-// ── ERROR MESSAGES ──────────────────────────────────────────────────
-const ERR = {
-  NO_KEY: 'No API key found. Please reconnect your Anthropic account.',
-  INVALID_KEY: 'Invalid API key. Please disconnect and reconnect with a valid key.',
-  RATE_LIMIT: 'Rate limited by Anthropic. Please wait 60 seconds and try again.',
-  NO_CREDITS: "You're out of Claude credits. Add more at console.anthropic.com/settings/billing",
-  OVERLOADED: 'Claude is temporarily overloaded. Please try again in 30 seconds.',
-  PARSE: 'Could not parse AI response. Please try again.',
-  API: 'API error. Please try again in a moment.',
-  BAD_TICKER: 'Invalid ticker. Use letters/numbers only, max 10 characters (e.g. NVDA, AAPL).',
+  {id:'value',emoji:'🧓',name:'Value Investor',color:'#fbbf24',tag:'Long-Term',desc:'Warren Buffett + Charlie Munger lens. Moat, margin of safety, patience.',
+   prompt:function(tk,prov){return 'You are a Buffett/Munger-style value investor. Analyze '+tk+'.\n\nFIRST: Use web search to get current price, P/E ratio, earnings history, revenue trends, balance sheet data.\n\n1. THE BUSINESS\nExplain what this company does in 2-3 simple sentences. How does it make money every day? Who are the customers?\n\n2. COMPETITIVE MOAT\nWhat prevents competitors from taking market share? Is the moat widening or narrowing? Rate: Wide/Narrow/None. Explain specifically.\n\n3. OWNER EARNINGS\nStrip out maintenance capex from reported earnings. What is the true free cash flow available to the owner? 10-year earnings power estimate.\n\n4. MARGIN OF SAFETY\nAt current price, what is the discount (or premium) to intrinsic value? Is there a 25-40% margin of safety?\n\n5. MANAGEMENT QUALITY\nCapital allocation track record. Do they treat shareholders as partners? Are they honest in communications? Any credibility issues?\n\n6. TEN-YEAR HOLDING TEST\nIf you could not sell this stock for 10 years, would you buy it today? Walk through the reasoning.\n\n7. RISKS TO THE MOAT\nTop 3 things that could destroy the competitive advantage over the next decade.\n\nVERDICT:\n- Would Buffett buy at current price? Why/why not?\n- Margin of safety estimate\n- Fair value range\n- Conviction /10\n- What price becomes compelling?\n\nStyle: Plain language. Business-owner perspective. Think in decades. Ignore short-term price noise.\n\n[Use web search in '+prov+' for current financial data]';}},
+
+  {id:'momentum',emoji:'📈',name:'Momentum Trader',color:'#4ade80',tag:'Short-Term',desc:'Technical catalysts, relative strength, entries and exits. Fast and precise.',
+   prompt:function(tk,prov){return 'You are an aggressive momentum trader. Analyze '+tk+' for a swing trade entry.\n\nFIRST: Use web search to get current price, recent price action, volume data, earnings date.\n\n1. TREND STRUCTURE\nCurrent trend: uptrend/downtrend/range. Price vs 21 EMA, 34 EMA, 50 SMA. Is the trend accelerating or decelerating? Is it healthy or overextended?\n\n2. RELATIVE STRENGTH\nHow is '+tk+' performing vs its sector ETF and vs SPY over 1M and 3M? Is it a market leader or laggard?\n\n3. VOLUME PROFILE\nExpanding volume on up days, contracting on down days (bullish)? Or opposite? Any volume anomalies recently?\n\n4. MOMENTUM INDICATORS\nRSI: level and divergence? MACD: crossover status and histogram direction. Any momentum exhaustion signals?\n\n5. KEY PRICE LEVELS\nExact support and resistance levels. Where are stops likely clustered? Where does a breakout trigger aggressive buying?\n\n6. CATALYST TIMING\nWhat event in the next 30-60 days could accelerate the move? Earnings date? Sector rotation? Index rebalance?\n\n7. ENTRY FRAMEWORK\nBreakout entry: exact price trigger + volume confirmation needed\nPullback entry: level + confirmation signal\nAggressive entry: for high-conviction only\nStop placement: exact level + reason\n\nFINAL:\n- Entry trigger | Stop | Target 1 | Target 2 | R/R ratio\n- Momentum probability %\n- Hold period (days/weeks)\n- What kills this trade?\n\nStyle: Fast, precise, price-focused. Every call needs an exact price level.\n\n[Enable web search in '+prov+' for live price data]';}},
+
+  {id:'contrarian',emoji:'🐻',name:'Contrarian Bear',color:'#f87171',tag:'Risk-First',desc:'Maximum skepticism. Find every reason this stock fails. Devil\'s advocate.',
+   prompt:function(tk,prov){return 'You are a hard-nosed contrarian short-seller. Build the strongest possible bear thesis for '+tk+'.\n\nFIRST: Use web search to get current valuation, recent revenue trends, competitive landscape, short interest data.\n\n1. THE NARRATIVE PROBLEM\nWhat story is the market telling about '+tk+'? Why is this narrative likely wrong, overstated, or fully priced in? Where is the consensus dangerously optimistic?\n\n2. VALUATION REALITY CHECK\nAt current price, what revenue/earnings growth is implied? Is this growth actually achievable? What happens to multiples if growth disappoints by even 10-20%?\n\n3. HIDDEN RISKS (that bulls ignore)\n- Accounting quality: cash flow vs net income divergence?\n- Customer concentration: over-reliance risk?\n- Competitive threats not in the mainstream narrative?\n- Management credibility failures?\n- SBC dilution: what are shareholders ACTUALLY paying for earnings?\n\n4. THE CROWDED TRADE\nIs this a consensus long? What does the unwind look like when sentiment shifts? How much downside in a multiple de-rating?\n\n5. TECHNICAL BREAKDOWN SCENARIO\nWhat price/event triggers a technical breakdown? Where do stop-loss cascades happen? What does a 30% and 50% drawdown look like from here?\n\n6. THE CATALYST FOR PAIN\nWhat single event causes maximum damage to the bull thesis? Earnings miss? Guidance cut? Competitor announcement? Regulatory action?\n\nFINAL:\n- Primary short thesis (1-2 sentences)\n- Top 3 hidden risks\n- Catalyst and timeline\n- Short entry | Stop | Target | R/R\n- What forces you to cover (bull case)\n- Short conviction /10\n\nStyle: Skeptical, precise, evidence-based. Not reflexively bearish, analytically bearish.\n\n[Use web search in '+prov+' for current data]';}},
+
+  {id:'quant',emoji:'🤖',name:'Quantitative',color:'#60a5fa',tag:'Data-Driven',desc:'Pure data. Factor scores. Statistical edge. Zero narrative bias.',
+   prompt:function(tk,prov){return 'You are a quantitative analyst at a systematic fund. Analyze '+tk+' using only data and statistical inference.\n\nFIRST: Use web search to retrieve factor data, beta, historical volatility, earnings revision trends, short interest.\n\n1. FACTOR EXPOSURE SCORES (rate 1-10 each with data)\n- Value factor: P/E, P/FCF, EV/EBITDA vs sector median\n- Momentum factor: 12-1 month price return, earnings revision direction\n- Quality factor: ROE, gross margin stability, accruals ratio, balance sheet strength\n- Low-volatility factor: beta, 30-day realized vol vs historical average\n- Growth factor: revenue growth consistency, earnings trajectory\n\n2. RISK METRICS\n- Beta vs S&P 500\n- 52-week realized volatility\n- Max drawdown in 2020 and 2022 corrections\n- Correlation to sector ETF\n\n3. EARNINGS REVISION TREND\nDirection of analyst EPS revisions over last 90 days. Is consensus going up or down? Magnitude of revisions vs historical average.\n\n4. STATISTICAL SIGNALS\nShort interest vs historical average. Options market: implied vs realized vol spread. Any quantitative anomalies?\n\n5. PORTFOLIO ROLE\nWhat factor does this add? Does it improve portfolio Sharpe ratio? Correlation benefit vs market?\n\nFINAL TABLE:\n- Factor scores: Value/Momentum/Quality/Low-Vol/Growth each /10\n- Overall quant score /10\n- Statistical edge vs market: positive/negative/neutral\n- Optimal position size as % of portfolio (Kelly-based)\n- Quant verdict: overweight/neutral/underweight\n\nStyle: No narrative. Only data and statistical inference. Numbers, not adjectives.\n\n[Use web search in '+prov+' for factor data]';}},
+
+  {id:'beginner',emoji:'🌱',name:'Learn Mode',color:'#4ade80',tag:'Educational',desc:'Simple explanations. Build real understanding. Perfect for new investors.',
+   prompt:function(tk,prov){return 'You are a patient, encouraging financial educator. Teach me about '+tk+' as if I am completely new to investing.\n\nFIRST: Use web search to get current price, recent news, basic financial data.\n\n1. WHAT IS THIS COMPANY?\nExplain what '+tk+' does in 2-3 simple sentences. Use an everyday analogy. Who are their customers and how do they actually make money?\n\n2. IS IT GROWING?\nLook at revenue (total money coming in) and earnings (profit kept). Is the company growing, stable, or shrinking? Explain what the numbers mean in plain English, not finance jargon.\n\n3. IS IT EXPENSIVE OR CHEAP?\nExplain the P/E ratio like I\'m 12 years old. Is '+tk+' expensive, fair value, or cheap compared to similar companies? Use a simple comparison.\n\n4. WHO ARE THE COMPETITORS?\nName 2-3 main competitors. What makes '+tk+' better or worse than them? Is it winning or losing market share?\n\n5. WHAT COULD GO WRONG?\nName 3 real risks a new investor should understand. Explain in plain English why each matters and how bad it could be.\n\n6. WHAT COULD GO RIGHT?\nName 3 realistic reasons this company could be worth more in 3-5 years. Be honest, not just optimistic.\n\n7. THE BASICS\nCurrent price, 52-week high and low (so I understand where we are in the range), what most analysts think overall.\n\n8. LEARNING MOMENT\nWhat important investing concept does this stock teach? (e.g., what a moat is, why profit margins matter, how to read guidance)\n\nVERDICT FOR A BEGINNER:\n- Should I learn more, consider a small position, or pass for now?\n- Why?\n- What 3 things should I watch over the next 6 months?\n- What would I pay for this? What would make me sell?\n\nStyle: Clear, encouraging, educational. Define every term. No jargon without explanation.\n\n[Use web search in '+prov+' for current data]';}},
+
+  {id:'income',emoji:'💰',name:'Income Investor',color:'#a78bfa',tag:'Dividends',desc:'Dividend yield, payout safety, passive income, retirement lens.',
+   prompt:function(tk,prov){return 'You are a dividend income investor building a retirement income portfolio. Analyze '+tk+' through an income-first lens.\n\nFIRST: Use web search to get current dividend yield, annual dividend per share, payout history, consecutive years of dividend growth, recent earnings.\n\n1. DIVIDEND SNAPSHOT\n- Current yield vs 5-year average yield (is this a yield trap?)\n- Annual dividend per share\n- Consecutive years of dividend increases\n- Dividend Aristocrat/King status?\n- Next ex-dividend date\n\n2. DIVIDEND SAFETY ANALYSIS\n- Payout ratio as % of EPS (safe zone typically under 60%)\n- FCF payout ratio (more important than EPS ratio)\n- Could the dividend survive a 20% earnings decline?\n- Coverage ratio: FCF per share vs dividend per share\n\n3. DIVIDEND GROWTH TRACK RECORD\n- 1-year, 3-year, 5-year, 10-year dividend CAGR\n- Is growth accelerating or decelerating?\n- Has the dividend ever been cut? When and why?\n\n4. BALANCE SHEET FOR INCOME INVESTORS\n- Debt-to-EBITDA (danger zone above 3.5x for most sectors)\n- Interest coverage ratio (danger zone below 3x)\n- Near-term debt maturities that could compete with the dividend?\n- Credit rating\n\n5. BUSINESS QUALITY\n- Revenue stability: cyclical or defensive?\n- Pricing power: can they raise prices without losing customers?\n- Capital intensity: does heavy capex compete with dividend for cash?\n\n6. INCOME COMPARISON\nCompare to 3 sector peers: yield, payout ratio, FCF payout, 5-year dividend growth, earnings stability. Is '+tk+' the best income play?\n\n7. TOTAL RETURN PERSPECTIVE\nIncome component (yield) + capital appreciation potential. Historical total return vs S&P 500. Is the stock cheap or expensive for an income investor?\n\nFINAL:\n- Dividend safety score /10\n- Sustainable yield range\n- 5-year income projection per $10,000 invested\n- Entry price for attractive yield\n- Maximum price to stay within target yield\n- Buy / Watch / Avoid for income investors\n\nStyle: Income-first. Numbers in context of dividend sustainability. Retiree perspective.\n\n[Use web search in '+prov+' for live dividend data]';}},
+
+  {id:'catalyst',emoji:'🎯',name:'Catalyst Hunter',color:'#fb923c',tag:'Event-Driven',desc:'Find the upcoming event that moves the stock. Binary bets, timing-first.',
+   prompt:function(tk,prov){return 'You are an event-driven hedge fund manager. Your only focus is identifying catalysts that move '+tk+' significantly in the next 30-90 days.\n\nFIRST: Use web search to find: next earnings date, any upcoming product launches, FDA/regulatory decisions, conferences, analyst days, M&A rumors, index rebalancing events.\n\n1. EARNINGS CATALYST\n- Next earnings date (exact date from search)\n- EPS and revenue consensus estimates\n- Historical beat/miss rate (last 4 quarters)\n- Options-implied expected move for earnings\n- Historical average post-earnings move (last 8 quarters)\n- Bull case if beats: target. Bear case if misses: target.\n\n2. PRODUCT/BUSINESS CATALYSTS (next 90 days)\n- Scheduled product launches or reveals\n- Regulatory approval decisions pending\n- Investor days or analyst days scheduled\n- Partnership or M&A speculation with evidence\n\n3. MACRO CATALYSTS\n- Any upcoming FOMC, CPI, or sector-specific data that moves this stock?\n- Index inclusion/exclusion risk?\n- Short squeeze potential (short interest % of float vs average)\n\n4. TECHNICAL CATALYST SETUP\n- Is the stock building a base near a breakout level?\n- What price level, if broken, triggers mechanical buying?\n- What level triggers stop-loss cascades?\n\n5. CATALYST RANKING\nFor each catalyst identified:\n- Event name | Expected date | Probability (%) | Magnitude if triggered (%) | Net Expected Value\nRank all catalysts by Expected Value = Probability x Magnitude\n\n6. TRADE STRUCTURE FOR TOP 2 CATALYSTS\n- Entry timing (days before event)\n- Shares vs options (which is better given current IV?)\n- Risk management if catalyst disappoints\n- Exact strikes and expiry if options\n\nFINAL:\n- Top catalyst ranked by EV\n- Best trade structure\n- Entry | Stop | Target | R/R\n- Conviction /10\n- What kills this trade?\n\nStyle: Timing and probability are everything. Be specific with dates and prices.\n\n[Use web search in '+prov+' to find exact upcoming dates and events]';}}
+];
+
+// ── DEMO DATA ─────────────────────────────────────────────────────────
+var DEMOS = {
+  'NVDA_institutional':{
+    company:'NVIDIA Corporation',ticker:'NVDA',sector:'Semiconductors · Mega Cap · ~$3.1T',
+    sentiment:'bullish',sentimentScore:78,conviction:8,riskScore:5,confidenceScore:8,
+    thesis:'NVIDIA holds a near-monopoly on AI training compute via CUDA ecosystem lock-in; GB200/Blackwell supercycle driving data center revenue +400% YoY, but hyperscaler capex dependency is the single biggest tail risk.',
+    bullCase:['Data center backlog extends 12-18 months; Blackwell supply constrained = pricing power intact','CUDA ecosystem lock-in is 15+ years deep — not replicable in 2-3 years','Inference compute demand adds a second independent growth vector post-training buildout'],
+    bearCase:['One bad META/MSFT capex guidance quarter could trigger a 25-35% drawdown instantly','China export restrictions permanently removed $8-12B in annualized TAM','AI efficiency gains (DeepSeek-style) could compress GPUs-needed per workload 40-60%'],
+    hiddenRisk:'Gross margin compression at CoWoS packaging scale if TSMC yields disappoint on GB200',
+    metrics:{revenueGrowth:'+122% YoY',grossMargin:'78.4%',opMargin:'61.2%',forwardPE:'32x',fcfYield:'2.8%',epsGrowth:'+114%'},
+    entry:'$118–125',stop:'$108',t1:'$145',t2:'$165',rr:'2.8:1',
+    catalysts:['Q2 earnings — GB200 ramp volume confirmation','Hyperscaler capex commentary from META/MSFT/AMZN/GOOGL earnings','Rubin architecture announcement timeline at GTC 2026']
+  },
+  'AAPL_value':{
+    company:'Apple Inc.',ticker:'AAPL',sector:'Technology · Consumer Electronics · ~$3.3T',
+    sentiment:'neutral',sentimentScore:55,conviction:6,riskScore:4,confidenceScore:7,
+    thesis:'Apple is the world\'s strongest consumer brand with a 1.5B device install base and an expanding services margin — but at 28x forward earnings the margin of safety is thin and Apple Intelligence differentiation remains unproven.',
+    bullCase:['Services segment growing 15%+ at 70%+ gross margin — the real hidden earnings machine','iPhone 17 AI features could drive an upgrade supercycle if execution delivers','$100B+ annual buyback program provides structural support for the stock price'],
+    bearCase:['28x forward PE prices near-perfection with limited room for any disappointment','China revenue (~18% of total) faces structural headwinds from Huawei and government pressure','Apple Intelligence has not yet demonstrably driven incremental revenue — still a narrative'],
+    hiddenRisk:'DOJ antitrust case against App Store 30% commission could permanently impair services margins',
+    metrics:{revenueGrowth:'+6% YoY',grossMargin:'46.2%',opMargin:'31.4%',forwardPE:'28x',fcfYield:'3.4%',epsGrowth:'+11%'},
+    entry:'$195–205',stop:'$185',t1:'$225',t2:'$245',rr:'2.1:1',
+    catalysts:['iPhone 17 launch and AI feature reception in September','WWDC developer conference — Apple Intelligence expansion','Services revenue acceleration in the holiday quarter']
+  },
+  'TSLA_contrarian':{
+    company:'Tesla Inc.',ticker:'TSLA',sector:'EV / Energy / Autonomous · Large Cap',
+    sentiment:'bearish',sentimentScore:32,conviction:7,riskScore:7,confidenceScore:7,
+    thesis:'Tesla trades at 60x forward earnings as a "technology company" while facing accelerating EV competition, collapsing automotive margins, and a CEO whose political activities are materially damaging brand value in its largest growth markets.',
+    bullCase:['Autonomous driving could be transformational if FSD reaches Level 4 at commercial scale','Megapack energy storage growing 150%+ YoY and at structurally higher margins','Optimus robot program could open an entirely new multi-trillion TAM by 2027-2028'],
+    bearCase:['Automotive gross margin collapsed from 28% to under 14% — pricing war is structural not cyclical','BYD, Volkswagen, Hyundai taking market share in every major region simultaneously','CEO brand damage in Europe — the primary growth market — is measurable and accelerating'],
+    hiddenRisk:'If FSD does not achieve Level 4 by 2026, the autonomous premium embedded in the stock (~40-50% of market cap) faces a full repricing event',
+    metrics:{revenueGrowth:'+2% YoY',grossMargin:'17.9%',opMargin:'5.5%',forwardPE:'60x',fcfYield:'0.8%',epsGrowth:'-40%'},
+    entry:'$220–235 (short)',stop:'$270',t1:'$185',t2:'$150',rr:'2.5:1',
+    catalysts:['Q2 deliveries print — below 400k accelerates bear thesis','FSD v14 beta reception from real-world users','Tesla China monthly sales data — any miss relative to BYD']
+  }
 };
 
-// ── COMPACT OPTIMIZED SYSTEM PROMPT (~280 tokens) ───────────────────
-const SYS = `You are an equity research AI. Return ONLY minified JSON — no markdown, no code blocks, no explanation.
-Strict brevity: thesis≤25 words; bull/bearCase/hiddenRisks/catalysts items≤12 words each; earningsSummary≤35 words; insiderActivity/confidenceReason≤20 words; linkedInPost≤75 words; youtubeScript≤90 words; ddSummary≤70 words; tweetThread≤90 words total.
-Schema: {"company":str,"ticker":str,"sector":str,"marketCap":str,"price":str,"thesis":str,"sentiment":"bullish|neutral|bearish","sentimentScore":int,"bullCase":[str,str,str],"bearCase":[str,str,str],"riskScore":int,"confidenceScore":int,"confidenceReason":str,"riskFactors":[{"name":str,"score":int},{"name":str,"score":int},{"name":str,"score":int},{"name":str,"score":int}],"revenueGrowth":str,"grossMargin":str,"operatingMargin":str,"epsGrowth":str,"fcfYield":str,"forwardPE":str,"earningsSummary":str,"hiddenRisks":[str,str,str],"institutions":[{"name":str,"action":"accumulating|distributing|holding"},{"name":str,"action":"accumulating|distributing|holding"},{"name":str,"action":"accumulating|distributing|holding"},{"name":str,"action":"accumulating|distributing|holding"}],"institutionalTrend":"accumulating|distributing|neutral","insiderActivity":str,"entryZone":str,"stopLoss":str,"target1":str,"target2":str,"rrRatio":str,"timeHorizon":str,"catalysts":[str,str,str],"conviction":int,"linkedInPost":str,"youtubeScript":str,"ddSummary":str,"tweetThread":str}`;
+// ── STATE ─────────────────────────────────────────────────────────────
+var selProvider='claude', selTone='institutional', skillPts=0, fbRating=0;
+var searches=[], currentDemoData=null;
 
-// ── STATE ───────────────────────────────────────────────────────────
-let data = null, ticker = '', isAnalyzing = false, lastRun = 0;
-let watchlist = [], skillPts = 0, sessionSearches = [];
-
-// Load watchlist from URL if shared
-(function loadSharedWL() {
-  try {
-    const p = new URLSearchParams(location.search).get('wl');
-    if (p) watchlist = JSON.parse(atob(p)).filter(w => validTicker(w.ticker||''));
-  } catch(e){}
-})();
-
-// ── ANALYTICS ───────────────────────────────────────────────────────
-function trk(ev, params) { try { track(ev, params); } catch(e){} }
-
-// ── INIT ────────────────────────────────────────────────────────────
-(function init() {
-  if (getKey()) showApp();
-  document.getElementById('key-inp').addEventListener('keydown', e => { if(e.key==='Enter') submitKey(); });
-})();
-
-function showApp() {
-  document.getElementById('modal-overlay').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  updateWLBadge();
+// ── BOOT ──────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',function(){
+  renderProviders();
+  renderTones();
+  renderEdu();
+  renderMarquee();
   updateSkillUI();
-  renderTrending();
-  trk('api_key_connected');
-}
+});
 
-function logout() {
-  if (!confirm('Disconnect your API key?')) return;
-  clearKey();
-  data = null; ticker = '';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('modal-overlay').style.display = 'flex';
-  document.getElementById('key-inp').value = '';
-  document.getElementById('key-err').style.display = 'none';
-}
-
-function submitKey() {
-  const k = document.getElementById('key-inp').value.trim();
-  const errEl = document.getElementById('key-err');
-  errEl.style.display = 'none';
-  if (!validKey(k)) {
-    errEl.textContent = 'Key must start with sk-ant- and be at least 30 characters.';
-    errEl.style.display = 'block';
-    return;
+// ── PROVIDERS ─────────────────────────────────────────────────────────
+function renderProviders(){
+  var html='';
+  for(var i=0;i<PROVIDERS.length;i++){
+    var p=PROVIDERS[i];
+    html+='<div class="prov-card'+(p.id===selProvider?' sel':'')+'" style="--pc:'+p.color+'" onclick="selProv(\''+p.id+'\')">';
+    html+='<div class="prov-icon">'+p.icon+'</div>';
+    html+='<div class="prov-name">'+p.name+'</div>';
+    html+='<div class="prov-note">'+p.note+'</div>';
+    html+='<div class="prov-free">'+p.free+'</div>';
+    html+='</div>';
   }
-  saveKey(k);
-  showApp();
+  document.getElementById('prov-grid').innerHTML=html;
 }
+function selProv(id){selProvider=id;renderProviders();addSP(3);regenerateIfTicker();}
 
-// ── VIEWS ────────────────────────────────────────────────────────────
-function setView(v) {
-  ['search','loading','dashboard','watchlist','education'].forEach(x => {
-    const el = document.getElementById('v-'+x);
-    if (el) el.style.display = x===v ? 'block' : 'none';
-  });
-  document.querySelectorAll('.nav-tab').forEach((t,i) => {
-    const vs=['search','watchlist','education'];
-    t.classList.toggle('on', vs[i]===v);
-  });
-  if (v==='watchlist') renderWL();
-  if (v==='education') renderEdu();
-}
-
-function setTab(tab) {
-  ['overview','fundamentals','institutional','risk','trading','export'].forEach(t => {
-    document.getElementById('tp-'+t).classList.toggle('on', t===tab);
-  });
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    const tabs=['overview','fundamentals','institutional','risk','trading','export'];
-    b.classList.toggle('on', tabs[i]===tab);
-  });
-  const pts = {fundamentals:6,institutional:8,risk:6,trading:9,export:5};
-  if (pts[tab]) addSP(pts[tab]);
-  trk('tab_viewed', {tab, ticker});
-}
-
-// ── ANALYZE ──────────────────────────────────────────────────────────
-function qt(t) { document.getElementById('t-inp').value = t; run(); }
-
-async function run() {
-  const raw = document.getElementById('t-inp').value.trim().toUpperCase();
-  const errEl = document.getElementById('search-err');
-  errEl.style.display = 'none';
-
-  // Validation
-  if (!raw) { document.getElementById('t-inp').focus(); return; }
-  if (!validTicker(raw)) { showErr(errEl, ERR.BAD_TICKER); return; }
-  if (isAnalyzing) return;
-  const now = Date.now();
-  if (now - lastRun < 3000) { toast('Please wait a moment before analyzing again.', '#fbbf24'); return; }
-
-  const key = getKey();
-  if (!key) { logout(); return; }
-
-  ticker = raw; isAnalyzing = true; lastRun = now;
-  document.getElementById('a-btn').disabled = true;
-  setView('loading');
-  document.getElementById('l-ticker').textContent = ticker;
-
-  const steps = [
-    'Retrieving live market data',
-    'Scanning earnings & SEC filings',
-    'Analyzing institutional flow',
-    'Building AI thesis & scoring',
-    'Generating content outputs'
-  ];
-  const stepsEl = document.getElementById('l-steps');
-  stepsEl.innerHTML = steps.map((s,i) =>
-    `<div class="load-step" id="ls${i}"><div class="ld" id="ld${i}"></div>${san(s)}</div>`
-  ).join('');
-
-  let si = 0;
-  const st = setInterval(() => {
-    if (si > 0) {
-      document.getElementById('ls'+(si-1)).classList.remove('act');
-      document.getElementById('ls'+(si-1)).classList.add('done');
-      document.getElementById('ld'+(si-1)).className = 'ld done';
-    }
-    if (si < steps.length) {
-      document.getElementById('ls'+si).classList.add('act');
-      document.getElementById('ld'+si).className = 'ld act';
-      document.getElementById('l-status').textContent = steps[si];
-      si++;
-    }
-  }, 1100);
-
-  try {
-    const result = await callAPI(ticker, key);
-    clearInterval(st);
-    data = result;
-    sessionSearches.unshift(ticker);
-    if (sessionSearches.length > 10) sessionSearches.pop();
-    trk('ticker_analyzed', { ticker, sentiment: data.sentiment, risk_score: data.riskScore, conviction: data.conviction });
-    addSP(14);
-    renderDash(data);
-    setView('dashboard');
-    setTab('overview');
-    toast('Analysis complete — ' + ticker);
-  } catch(e) {
-    clearInterval(st);
-    const msg = e.message || 'API';
-    showErr(errEl, ERR[msg] || ERR.API);
-    if (msg === 'INVALID_KEY') { setTimeout(logout, 1500); }
-    setView('search');
-  } finally {
-    isAnalyzing = false;
-    document.getElementById('a-btn').disabled = false;
-    renderTrending();
+// ── TONES ─────────────────────────────────────────────────────────────
+function renderTones(){
+  var html='';
+  for(var i=0;i<TONES.length;i++){
+    var t=TONES[i];
+    html+='<div class="tone-card'+(t.id===selTone?' sel':'')+'" style="--tc:'+t.color+'" onclick="selTone(\''+t.id+'\')">';
+    html+='<div class="tone-emoji">'+t.emoji+'</div>';
+    html+='<div><div class="tone-name">'+t.name+'</div>';
+    html+='<div class="tone-desc">'+t.desc+'</div>';
+    html+='<span class="tone-tag">'+t.tag+'</span></div></div>';
   }
+  document.getElementById('tone-grid').innerHTML=html;
+}
+function selTone(id){selTone=id;renderTones();addSP(4);regenerateIfTicker();}
+function regenerateIfTicker(){var v=document.getElementById('t-inp').value.trim().toUpperCase();if(v&&/^[A-Z0-9.\-\^]{1,10}$/i.test(v))generate();}
+
+// ── GENERATE ──────────────────────────────────────────────────────────
+function qt(t){document.getElementById('t-inp').value=t;generate();}
+
+function generate(){
+  var raw=document.getElementById('t-inp').value.trim().toUpperCase();
+  if(!raw){document.getElementById('t-inp').focus();return;}
+  if(!/^[A-Z0-9.\-\^]{1,10}$/i.test(raw)){toast('Use letters/numbers only, max 10 chars (e.g. NVDA)','#f87171');return;}
+  var tone=null;
+  for(var i=0;i<TONES.length;i++){if(TONES[i].id===selTone){tone=TONES[i];break;}}
+  if(!tone)tone=TONES[0];
+  var prov=null;
+  for(var j=0;j<PROVIDERS.length;j++){if(PROVIDERS[j].id===selProvider){prov=PROVIDERS[j];break;}}
+  var provName=prov?prov.name:'Claude';
+  var promptText=tone.prompt(raw,provName);
+  var box=document.getElementById('po-box');
+  box.textContent=promptText;
+  box.classList.add('lit');
+  searches.unshift({ticker:raw,tone:selTone,provider:selProvider,ts:Date.now()});
+  if(searches.length>10)searches.pop();
+  updateTrending();
+  addSP(12);
+  toast('Prompt ready for '+raw+' — copy and paste into '+provName+' with web search ON');
 }
 
-// ── API CLIENT ────────────────────────────────────────────────────────
-async function callAPI(sym, key) {
-  let resp;
-  try {
-    resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 950,
-        system: SYS,
-        messages: [{ role: 'user', content: 'Analyze ' + sym }]
-      })
-    });
-  } catch(e) {
-    throw new Error('API');
-  }
-
-  if (!resp.ok) {
-    let errBody = {};
-    try { errBody = await resp.json(); } catch(e) {}
-    const etype = (errBody?.error?.type || '').toLowerCase();
-    if (resp.status === 401) throw new Error('INVALID_KEY');
-    if (resp.status === 429) throw new Error('RATE_LIMIT');
-    if (etype.includes('credit') || etype.includes('billing') || resp.status === 402) throw new Error('NO_CREDITS');
-    if (resp.status === 529 || etype.includes('overload')) throw new Error('OVERLOADED');
-    throw new Error('API');
-  }
-
-  const raw = await resp.json();
-  const text = (raw.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-
-  // Safe JSON parse
-  let parsed;
-  try { parsed = JSON.parse(text.trim()); }
-  catch(e) {
-    const m = text.match(/\{[\s\S]*\}/);
-    if (m) { try { parsed = JSON.parse(m[0]); } catch(e2) { throw new Error('PARSE'); } }
-    else throw new Error('PARSE');
-  }
-
-  // Basic sanity check — must have ticker field
-  if (!parsed || typeof parsed !== 'object' || !parsed.ticker) throw new Error('PARSE');
-  return parsed;
-}
-
-// ── RENDER DASHBOARD ──────────────────────────────────────────────────
-function renderDash(d) {
-  // Header
-  setTxt('d-co', d.company || d.ticker);
-  setTxt('d-tk', d.ticker);
-  setTxt('d-sec', (d.sector||'') + ' · ' + (d.marketCap||'') + ' · ' + (d.price||''));
-
-  const sent = d.sentiment || 'neutral';
-  const sc = sent==='bullish'?'b-bull':sent==='bearish'?'b-bear':'b-neu';
-  setHTML('d-badges', `
-    <span class="badge ${sc}">${san(sent)}</span>
-    <span class="badge b-acc">Conviction ${+d.conviction||0}/10</span>
-    <span class="badge b-org">Risk ${+d.riskScore||0}/10</span>
-    <span class="badge b-pur">AI Conf ${+d.confidenceScore||0}/10</span>
-  `);
-
-  const sc2 = [
-    {l:'AI Conviction',v:(+d.conviction||0)+'/10',c:'var(--acc)',p:(+d.conviction||0)*10},
-    {l:'Risk Score',v:(+d.riskScore||0)+'/10',c:(+d.riskScore||0)>=7?'var(--red)':(+d.riskScore||0)>=5?'var(--org)':'var(--grn)',p:(+d.riskScore||0)*10},
-    {l:'AI Confidence',v:(+d.confidenceScore||0)+'/10',c:'var(--pur)',p:(+d.confidenceScore||0)*10},
-    {l:'Sentiment',v:(+d.sentimentScore||0)+'%',c:sent==='bullish'?'var(--grn)':sent==='bearish'?'var(--red)':'var(--mut)',p:(+d.sentimentScore||0)}
-  ];
-  setHTML('d-scores', sc2.map(x=>`<div class="sc-card"><div class="sc-label">${san(x.l)}</div><div class="sc-val" style="color:${x.c}">${san(x.v)}</div><div class="sc-bar"><div class="sc-fill" style="width:${x.p}%;background:${x.c}"></div></div></div>`).join(''));
-
-  // Overview
-  setTxt('d-thesis', d.thesis||'');
-  setHTML('d-bb', `
-    <div class="bb bull"><div class="bb-title">Bull case</div>${(d.bullCase||[]).map(b=>`<div class="bb-item"><div class="bb-dot">↑</div><span>${san(b)}</span></div>`).join('')}</div>
-    <div class="bb bear"><div class="bb-title">Bear case</div>${(d.bearCase||[]).map(b=>`<div class="bb-item"><div class="bb-dot">↓</div><span>${san(b)}</span></div>`).join('')}</div>
-  `);
-
-  const cf = +d.confidenceScore||0;
-  document.getElementById('conf-arc').style.strokeDashoffset = (188.5 - (188.5 * cf/10)).toString();
-  setTxt('conf-n', cf.toString());
-  setHTML('conf-det', `<div style="font-size:10px;color:var(--tx);line-height:1.6">${san(d.confidenceReason||'')}</div><div style="margin-top:8px;font-size:10px;color:var(--mut)">Inst. trend: <span style="color:${d.institutionalTrend==='accumulating'?'var(--grn)':d.institutionalTrend==='distributing'?'var(--red)':'var(--mut)'}">${san(d.institutionalTrend||'neutral')}</span></div>`);
-
-  const sentScore = +d.sentimentScore||50;
-  const sentC = sent==='bullish'?'var(--grn)':sent==='bearish'?'var(--red)':'var(--mut)';
-  setHTML('d-sent', `<div class="sent-labels"><span>Bearish</span><span>Neutral</span><span>Bullish</span></div><div class="sent-track"><div class="sent-fill" style="width:${sentScore}%;background:${sentC}"></div></div><div class="sent-val" style="color:${sentC}">${sentScore}%</div><div class="sent-sub">${san(sent)} bias · ${san(d.institutionalTrend||'neutral')} institutional</div>`);
-
-  // Fundamentals
-  const mets = [
-    {l:'Revenue Growth',v:d.revenueGrowth},{l:'Gross Margin',v:d.grossMargin},{l:'Op. Margin',v:d.operatingMargin},
-    {l:'EPS Growth',v:d.epsGrowth},{l:'FCF Yield',v:d.fcfYield},{l:'Forward P/E',v:d.forwardPE}
-  ];
-  setHTML('d-mets', mets.map(m=>`<div class="met-card"><div class="met-lbl">${san(m.l)}</div><div class="met-val">${san(m.v||'—')}</div></div>`).join(''));
-  setTxt('d-earn', d.earningsSummary||'');
-  setHTML('d-hidden', (d.hiddenRisks||[]).map((r,i)=>`<div style="display:flex;gap:8px;padding:8px 0;${i<(d.hiddenRisks.length-1)?'border-bottom:1px solid var(--bor)':''}"><span style="color:var(--org);flex-shrink:0">⚠</span><span style="font-size:11px;color:var(--tx)">${san(r)}</span></div>`).join(''));
-
-  // Institutional
-  setHTML('d-flow', (d.institutions||[]).map(inst=>`<div class="flow-item"><span class="flow-name">${san(inst.name||'')}</span><span class="flow-tag ${inst.action==='accumulating'?'ft-buy':inst.action==='distributing'?'ft-sell':'ft-hold'}">${san(inst.action||'holding')}</span></div>`).join(''));
-  setTxt('d-insider', d.insiderActivity||'');
-
-  // Risk
-  const rs = +d.riskScore||0;
-  const riskEl = document.getElementById('risk-n');
-  riskEl.textContent = rs+'/10';
-  riskEl.style.color = rs>=7?'var(--red)':rs>=5?'var(--org)':'var(--grn)';
-  setHTML('d-rfs', (d.riskFactors||[]).map(rf=>`<div class="rf-item"><span class="rf-name">${san(rf.name||'')}</span><div class="rf-bar"><div class="rf-fill" style="width:${(+rf.score||0)*10}%;background:${(+rf.score||0)>=7?'var(--red)':(+rf.score||0)>=5?'var(--org)':'var(--grn)'}"></div></div><span class="rf-val">${+rf.score||0}/10</span></div>`).join(''));
-
-  // Trading
-  const tc = [['Entry Zone',d.entryZone,'var(--acc)'],['Stop Loss',d.stopLoss,'var(--red)'],['Target 1',d.target1,'var(--grn)'],['Target 2',d.target2,'var(--grn)'],['R/R Ratio',d.rrRatio,'var(--pur)'],['Conviction',(+d.conviction||0)+'/10','var(--acc)']];
-  setHTML('d-trade', tc.map(([l,v,c])=>`<div class="trade-cell"><div class="trade-lbl">${san(l)}</div><div class="trade-val" style="color:${c}">${san(v||'—')}</div></div>`).join(''));
-  setHTML('d-trade-sub', `Time horizon: <span style="color:var(--tx)">${san(d.timeHorizon||'—')}</span>`);
-  setHTML('d-cats', (d.catalysts||[]).map((c,i)=>`<div style="display:flex;gap:8px;padding:7px 0;${i<(d.catalysts.length-1)?'border-bottom:1px solid var(--bor)':''}"><span style="color:var(--acc);flex-shrink:0">→</span><span style="font-size:11px;color:var(--tx)">${san(c)}</span></div>`).join(''));
-
-  // Export
-  const exports = [
-    {type:'LinkedIn Post',title:'Professional investment post',key:'linkedInPost'},
-    {type:'YouTube Short Script',title:'60-second video script',key:'youtubeScript'},
-    {type:'DD Report Brief',title:'Due diligence summary',key:'ddSummary'},
-    {type:'Tweet Thread',title:'3-tweet research thread',key:'tweetThread'}
-  ];
-  setHTML('d-exp', exports.map(e=>`<div class="exp-card"><div class="exp-type">${san(e.type)}</div><div class="exp-title">${san(e.title)}</div><div class="exp-preview">${san((d[e.key]||'').slice(0,100))}...</div><button class="exp-btn" id="eb-${e.key}" onclick="cpExport('${e.key}')">Copy ${san(e.type)}</button></div>`).join(''));
-  const addBtn = document.getElementById('add-wl-btn');
-  addBtn.disabled = false;
-  addBtn.textContent = '+ Add to watchlist';
-  addBtn.style.color = '';
-  addBtn.style.borderColor = '';
-}
-
-// ── HELPERS ───────────────────────────────────────────────────────────
-function setTxt(id, str) { const el=document.getElementById(id); if(el) el.textContent=str; }
-function setHTML(id, html) { const el=document.getElementById(id); if(el) el.innerHTML=html; }
-function showErr(el, msg) { el.textContent = msg; el.style.display = 'block'; }
-
-function cpExport(key) {
-  if (!data) return;
-  const text = data[key] || '';
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('eb-'+key);
-    const orig = btn.textContent;
-    btn.textContent = '✓ Copied!';
-    btn.classList.add('ok');
-    setTimeout(()=>{ btn.textContent=orig; btn.classList.remove('ok'); }, 2000);
+function copyPrompt(){
+  var box=document.getElementById('po-box');
+  var text=box.textContent||box.innerText;
+  if(!text||text.indexOf('Pick a provider')===0){toast('Generate a prompt first','#fbbf24');return;}
+  navigator.clipboard.writeText(text).then(function(){
+    toast('Copied! Paste into your AI with web search enabled.');
     addSP(5);
-    trk('content_exported', {type: key, ticker});
-    toast('Copied!');
   });
 }
 
-// ── WATCHLIST ─────────────────────────────────────────────────────────
-function addWL() {
-  if (!data) return;
-  if (watchlist.find(w=>w.ticker===data.ticker)) { toast('Already in watchlist','#fbbf24'); return; }
-  watchlist.push({ ticker:data.ticker, company:data.company||data.ticker, thesis:data.thesis||'', conviction:data.conviction||0, sentiment:data.sentiment||'neutral', riskScore:data.riskScore||0, addedAt:Date.now() });
-  updateWLBadge();
-  addSP(4);
-  trk('watchlist_added', {ticker:data.ticker});
-  toast(data.ticker + ' added to watchlist');
-  const btn = document.getElementById('add-wl-btn');
-  btn.disabled = true;
-  btn.textContent = '✓ In watchlist';
-  btn.style.color = 'var(--grn)';
-  btn.style.borderColor = 'var(--grn)';
+// ── DEMO LOADER ───────────────────────────────────────────────────────
+function loadDemo(ticker,tone){
+  var key=ticker+'_'+tone;
+  var d=DEMOS[key];
+  if(!d){toast('Demo coming soon for that combination!','#fbbf24');return;}
+  currentDemoData=d;
+  document.getElementById('result-box').style.display='block';
+  document.getElementById('share-sec').style.display='block';
+  document.getElementById('t-inp').value=ticker;
+  selTone=tone;renderTones();
+  var toneObj=null;
+  for(var i=0;i<TONES.length;i++){if(TONES[i].id===tone){toneObj=TONES[i];break;}}
+  document.getElementById('rp-name').textContent=d.company;
+  document.getElementById('rp-meta').textContent=d.sector;
+  var sent=d.sentiment;
+  var sc=sent==='bullish'?'b-grn':sent==='bearish'?'b-red':'b-mut';
+  document.getElementById('rp-badges').innerHTML='<span class="badge '+sc+'">'+sent+'</span><span class="badge b-acc">Conviction '+d.conviction+'/10</span><span class="badge b-org">Risk '+d.riskScore+'/10</span>'+(toneObj?'<span class="badge b-blue">'+toneObj.tag+'</span>':'');
+  renderDemoTab(d,'overview');
+  renderShareCards(d);
+  addSP(10);
+  document.getElementById('result-box').scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.querySelectorAll('.rp-tab').forEach(function(b,i){b.classList.toggle('on',i===0);});
 }
 
-function updateWLBadge() { document.getElementById('wl-badge').textContent = watchlist.length; }
-
-function renderWL() {
-  const el = document.getElementById('wl-list');
-  if (!watchlist.length) { el.innerHTML = '<div class="wl-empty">No stocks yet. Analyze a stock and add it here.</div>'; return; }
-  el.innerHTML = watchlist.map((w,i)=>`
-    <div class="wl-item">
-      <span class="wl-tk">${san(w.ticker)}</span>
-      <div style="flex:1;min-width:0"><div class="wl-co">${san(w.company)}</div><div class="wl-th">${san(w.thesis)}</div></div>
-      <div class="wl-acts">
-        <span class="badge ${w.sentiment==='bullish'?'b-bull':w.sentiment==='bearish'?'b-bear':'b-neu'}" style="flex-shrink:0">${san(w.sentiment)}</span>
-        <span class="badge b-acc" style="flex-shrink:0">${+w.conviction||0}/10</span>
-        <button class="sm-btn" onclick="rerun('${san(w.ticker)}')">Re-run</button>
-        <button class="del-btn" onclick="delWL(${i})">✕</button>
-      </div>
-    </div>
-  `).join('');
+function rpTab(tab,el){
+  document.querySelectorAll('.rp-tab').forEach(function(b){b.classList.remove('on');});
+  if(el)el.classList.add('on');
+  if(currentDemoData)renderDemoTab(currentDemoData,tab);
 }
 
-function rerun(t) { document.getElementById('t-inp').value=t; setView('search'); setTimeout(run,100); }
-function delWL(i) { watchlist.splice(i,1); updateWLBadge(); renderWL(); }
+function renderDemoTab(d,tab){
+  var body=document.getElementById('rp-body');
+  var sent=d.sentiment;
+  var scolor=sent==='bullish'?'var(--grn)':sent==='bearish'?'var(--red)':'var(--mut)';
+  if(tab==='overview'){
+    var html='<div class="thesis-quote">'+esc(d.thesis)+'</div>';
+    html+='<div class="bb-grid">';
+    html+='<div class="bb-side bb-bull"><div class="bb-lbl">Bull Case</div>';
+    for(var i=0;i<d.bullCase.length;i++)html+='<div class="bb-li"><div class="bb-li-dot">&#8593;</div><span>'+esc(d.bullCase[i])+'</span></div>';
+    html+='</div><div class="bb-side bb-bear"><div class="bb-lbl">Bear Case</div>';
+    for(var j=0;j<d.bearCase.length;j++)html+='<div class="bb-li"><div class="bb-li-dot">&#8595;</div><span>'+esc(d.bearCase[j])+'</span></div>';
+    html+='</div></div>';
+    html+='<div style="background:var(--s2);border:1px solid var(--b1);padding:10px;font-size:10px;color:var(--mut)">&#9888; Hidden Risk: '+esc(d.hiddenRisk)+'</div>';
+    body.innerHTML=html;
+  } else if(tab==='metrics'){
+    var m=d.metrics;
+    var html='<div class="met-grid" style="margin-bottom:14px">';
+    var mk=['revenueGrowth','grossMargin','opMargin','forwardPE','fcfYield','epsGrowth'];
+    var ml=['Revenue Growth','Gross Margin','Op. Margin','Forward P/E','FCF Yield','EPS Growth'];
+    for(var i=0;i<mk.length;i++)html+='<div class="met"><div class="met-l">'+ml[i]+'</div><div class="met-v">'+esc(m[mk[i]])+'</div></div>';
+    html+='</div>';
+    html+='<div style="font-size:10px;color:var(--mut);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Trade Setup</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-bottom:14px">';
+    var tc=[['Entry',d.entry,'var(--acc)'],['Stop',d.stop,'var(--red)'],['Target 1',d.t1,'var(--grn)'],['Target 2',d.t2,'var(--grn)'],['R/R',d.rr,'var(--pur)']];
+    for(var i=0;i<tc.length;i++)html+='<div class="met"><div class="met-l">'+tc[i][0]+'</div><div class="met-v" style="color:'+tc[i][2]+'">'+esc(tc[i][1])+'</div></div>';
+    html+='</div>';
+    html+='<div style="font-size:10px;color:var(--mut);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Key Catalysts</div>';
+    for(var i=0;i<d.catalysts.length;i++)html+='<div class="catalyst-li"><span style="color:var(--acc);flex-shrink:0">&#8594;</span><span>'+esc(d.catalysts[i])+'</span></div>';
+    body.innerHTML=html;
+  } else if(tab==='scores'){
+    var scores=[
+      {l:'AI Conviction',v:d.conviction+'/10',pct:d.conviction*10,c:'var(--acc)'},
+      {l:'Risk Level',v:d.riskScore+'/10',pct:d.riskScore*10,c:d.riskScore>=7?'var(--red)':d.riskScore>=5?'var(--org)':'var(--grn)'},
+      {l:'Confidence',v:d.confidenceScore+'/10',pct:d.confidenceScore*10,c:'var(--pur)'},
+      {l:'Sentiment',v:d.sentimentScore+'%',pct:d.sentimentScore,c:scolor}
+    ];
+    var html='<div class="score-row">';
+    for(var i=0;i<scores.length;i++)html+='<div class="score-chip"><div class="sc-val" style="color:'+scores[i].c+'">'+esc(scores[i].v)+'</div><div class="sc-lbl">'+esc(scores[i].l)+'</div></div>';
+    html+='</div>';
+    for(var i=0;i<scores.length;i++){
+      html+='<div class="score-bar-wrap"><div class="score-bar-lbl"><span>'+esc(scores[i].l)+'</span><span style="color:'+scores[i].c+'">'+esc(scores[i].v)+'</span></div><div class="score-bar-track"><div class="score-bar-fill" style="width:'+scores[i].pct+'%;background:'+scores[i].c+'"></div></div></div>';
+    }
+    body.innerHTML=html;
+  } else if(tab==='share'){
+    body.innerHTML='<div style="font-size:10px;color:var(--mut);margin-bottom:12px">Your analysis is ready to share. Copy any format below.</div>';
+    renderShareCards(d);
+  }
+}
 
-function shareWL() {
-  if (!watchlist.length) { toast('Add stocks to share your watchlist','#fbbf24'); return; }
-  const mini = watchlist.map(w=>({ticker:w.ticker,conviction:w.conviction,sentiment:w.sentiment}));
-  const url = location.origin + location.pathname + '?wl=' + btoa(JSON.stringify(mini));
-  navigator.clipboard.writeText(url).then(()=>toast('Watchlist URL copied!'));
+// ── SHARE CARDS ───────────────────────────────────────────────────────
+function renderShareCards(d){
+  var toneObj=null;
+  for(var i=0;i<TONES.length;i++){if(TONES[i].id===selTone){toneObj=TONES[i];break;}}
+  var sentEmoji=d.sentiment==='bullish'?'🟢':d.sentiment==='bearish'?'🔴':'🟡';
+  var li='📊 '+d.ticker+' — '+d.company+'\n\n'+sentEmoji+' Sentiment: '+d.sentiment.toUpperCase()+' | Conviction: '+d.conviction+'/10 | Risk: '+d.riskScore+'/10\n\nTHESIS: '+d.thesis+'\n\nBULL CASE:\n'+d.bullCase.map(function(b){return '✅ '+b;}).join('\n')+'\n\nBEAR CASE:\n'+d.bearCase.map(function(b){return '⚠️ '+b;}).join('\n')+'\n\nTrade Setup: Entry '+d.entry+' | Stop '+d.stop+' | T1 '+d.t1+' | R/R '+d.rr+'\n\nGenerated with AI Investment OS (free tool)\n🔗 patluri9.github.io/institutional-stock-analyst-prompt\n\n#investing #stocks #'+d.ticker+' #stockmarket #ai';
+  var tw='📊 $'+d.ticker+' Quick DD 🧵\n\nConviction: '+d.conviction+'/10 | '+d.sentiment.toUpperCase()+' bias\n\n🟢 Bull: '+d.bullCase[0]+'\n🔴 Bear: '+d.bearCase[0]+'\n⚠️ Hidden: '+d.hiddenRisk+'\n\nEntry: '+d.entry+' | T1: '+d.t1+' | Stop: '+d.stop+'\n\nFree AI research tool ↓\npatluri9.github.io/institutional-stock-analyst-prompt';
+  var yt='Hook: Everyone is talking about $'+d.ticker+' — here\'s what the institutions actually see.\n\nThesis: '+d.thesis+'\n\nBull case number one: '+d.bullCase[0]+'\n\nThe bear case most people ignore: '+d.bearCase[0]+'\n\nThe hidden risk nobody is talking about: '+d.hiddenRisk+'\n\nTrade setup: Entry at '+d.entry+', stop at '+d.stop+', target at '+d.t1+'. That\'s a '+d.rr+' risk-reward ratio.\n\nConviction score: '+d.conviction+' out of 10.\n\nI used the free AI Investment OS to generate this analysis. Link in the description. Do your own research.';
+  var dd='EXECUTIVE SUMMARY — '+d.ticker+' ('+d.company+')\nDate: '+new Date().toDateString()+'\nPersona: '+(toneObj?toneObj.name:'Institutional')+'\n\nTHESIS: '+d.thesis+'\n\nBULL: '+d.bullCase.join(' | ')+'\nBEAR: '+d.bearCase.join(' | ')+'\nHIDDEN RISK: '+d.hiddenRisk+'\n\nMETRICS: Rev Growth '+d.metrics.revenueGrowth+' | Gross Margin '+d.metrics.grossMargin+' | Fwd PE '+d.metrics.forwardPE+' | FCF Yield '+d.metrics.fcfYield+'\n\nTRADE: Entry '+d.entry+' | Stop '+d.stop+' | T1 '+d.t1+' | T2 '+d.t2+' | R/R '+d.rr+'\nSENTIMENT: '+d.sentiment+' ('+d.sentimentScore+'%) | CONVICTION: '+d.conviction+'/10 | RISK: '+d.riskScore+'/10';
+  var cards=[
+    {type:'LinkedIn Post',title:'Professional investment post',preview:li,id:'sc-li'},
+    {type:'Tweet / X Thread',title:'3-tweet research thread',preview:tw,id:'sc-tw'},
+    {type:'YouTube Short Script',title:'60-second video script',preview:yt,id:'sc-yt'},
+    {type:'DD Report Brief',title:'Due diligence summary',preview:dd,id:'sc-dd'}
+  ];
+  window._shareData={li:li,tw:tw,yt:yt,dd:dd};
+  var html='';
+  for(var i=0;i<cards.length;i++){
+    var c=cards[i];
+    html+='<div class="share-card">';
+    html+='<div class="sh-type">'+c.type+'</div>';
+    html+='<div class="sh-title">'+c.title+'</div>';
+    html+='<div class="sh-preview">'+esc(c.preview.slice(0,90))+'...</div>';
+    html+='<button class="sh-btn" id="'+c.id+'" onclick="cpShare(\''+c.id+'\')">Copy '+c.type+'</button>';
+    html+='</div>';
+  }
+  document.getElementById('share-grid').innerHTML=html;
+}
+
+function cpShare(id){
+  var map={'sc-li':'li','sc-tw':'tw','sc-yt':'yt','sc-dd':'dd'};
+  var key=map[id];
+  if(!key||!window._shareData)return;
+  navigator.clipboard.writeText(window._shareData[key]).then(function(){
+    var btn=document.getElementById(id);
+    if(btn){var orig=btn.textContent;btn.textContent='✓ Copied!';btn.classList.add('ok');setTimeout(function(){btn.textContent=orig;btn.classList.remove('ok');},2200);}
+    addSP(5);toast('Copied! Ready to paste.');
+  });
+}
+
+// ── MARQUEE ───────────────────────────────────────────────────────────
+var MQ_DATA=[
+  {t:'NVDA',v:'$127.40',c:'+3.2%',up:true},{t:'AAPL',v:'$213.50',c:'+0.8%',up:true},
+  {t:'TSLA',v:'$248.90',c:'-1.4%',up:false},{t:'MSFT',v:'$457.20',c:'+1.1%',up:true},
+  {t:'META',v:'$612.30',c:'+2.3%',up:true},{t:'AMZN',v:'$218.40',c:'+0.5%',up:true},
+  {t:'AMD',v:'$162.10',c:'+4.1%',up:true},{t:'GOOGL',v:'$181.90',c:'+0.9%',up:true},
+  {t:'NFLX',v:'$1,024',c:'-0.3%',up:false},{t:'CRM',v:'$289.40',c:'+1.8%',up:true},
+  {t:'PLTR',v:'$38.20',c:'+5.4%',up:true},{t:'SMCI',v:'$41.80',c:'-2.1%',up:false}
+];
+function renderMarquee(){
+  var doubled=MQ_DATA.concat(MQ_DATA);
+  var html='';
+  for(var i=0;i<doubled.length;i++){
+    var d=doubled[i];
+    html+='<div class="mq-item"><span class="mq-tk">'+d.t+'</span><span class="mq-val">'+d.v+'</span><span class="mq-val '+(d.up?'mq-up':'mq-dn')+'">'+d.c+'</span></div>';
+  }
+  document.getElementById('mq').innerHTML=html;
 }
 
 // ── TRENDING ──────────────────────────────────────────────────────────
-function renderTrending() {
-  const el = document.getElementById('trending-row');
-  if (!el) return;
-  if (!sessionSearches.length) {
-    el.innerHTML = 'Featured: ' + OWNER_CONFIG.FEATURED_TICKERS.slice(0,5).map(t=>`<span style="color:var(--acc);cursor:pointer" onclick="qt('${t}')">${t}</span>`).join(' · ');
-    return;
+function updateTrending(){
+  if(!searches.length)return;
+  var counts={};
+  for(var i=0;i<searches.length;i++){var t=searches[i].ticker;counts[t]=(counts[t]||0)+1;}
+  var arr=Object.keys(counts).map(function(k){return{t:k,n:counts[k]};}).sort(function(a,b){return b.n-a.n;}).slice(0,5);
+  var html='';
+  for(var i=0;i<arr.length;i++){
+    html+='<div class="trend-item" onclick="qt(\''+esc(arr[i].t)+'\')"><span class="trend-rank">'+(i+1)+'</span><span class="trend-tk">'+esc(arr[i].t)+'</span><span class="badge b-acc">'+arr[i].n+'x</span></div>';
   }
-  el.innerHTML = 'Your session: ' + sessionSearches.slice(0,5).map(t=>`<span class="trending-row" style="display:inline"><span style="color:var(--acc);cursor:pointer" onclick="qt('${t}')">${san(t)}</span></span>`).join(' · ');
+  document.getElementById('trend-list').innerHTML=html;
 }
 
 // ── SKILL SYSTEM ──────────────────────────────────────────────────────
-const SKILL_LEVELS = [
-  {name:'Novice',min:0},{name:'Beginner',min:15},{name:'Intermediate',min:35},{name:'Advanced',min:65},{name:'Expert',min:90}
+var EDU_STAGES=[
+  {emoji:'🌱',title:'Novice',desc:'Price, volume, why stocks move.',pts:0},
+  {emoji:'📖',title:'Beginner',desc:'Earnings, revenue, P/E ratio.',pts:15},
+  {emoji:'📊',title:'Intermediate',desc:'Technical analysis, SEC filings, flow.',pts:35},
+  {emoji:'🏛️',title:'Advanced',desc:'DCF, moat analysis, portfolio construction.',pts:65},
+  {emoji:'🎯',title:'Expert',desc:'Original DD, macro overlay, short thesis.',pts:90}
 ];
-function addSP(n) { skillPts = Math.min(100, skillPts+n); updateSkillUI(); }
-function updateSkillUI() {
-  document.getElementById('sk-fill').style.width = skillPts + '%';
-  let lvl = SKILL_LEVELS[0];
-  for (const l of SKILL_LEVELS) if (skillPts >= l.min) lvl = l;
-  document.getElementById('sk-level').textContent = lvl.name;
-  for (let i=1;i<5;i++) {
-    document.getElementById('ss'+i).classList.toggle('lit', skillPts >= SKILL_LEVELS[i].min);
+function addSP(n){skillPts=Math.min(100,skillPts+n);updateSkillUI();}
+function updateSkillUI(){
+  document.getElementById('sk-fill').style.width=skillPts+'%';
+  var levels=[{n:'Novice',m:0},{n:'Beginner',m:15},{n:'Pro',m:35},{n:'Expert',m:65}];
+  var lbl=levels[0].n;
+  for(var i=0;i<levels.length;i++){if(skillPts>=levels[i].m)lbl=levels[i].n;}
+  document.getElementById('sk-lbl').textContent=lbl+' ('+Math.round(skillPts)+' pts)';
+  var ids=['sn1','sn2','sn3'];
+  var thresholds=[15,35,65];
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]);
+    if(el)el.classList.toggle('lit',skillPts>=thresholds[i]);
   }
+  renderEdu();
+}
+function renderEdu(){
+  var html='';
+  for(var i=0;i<EDU_STAGES.length;i++){
+    var s=EDU_STAGES[i];
+    var lit=skillPts>=s.pts;
+    html+='<div class="edu-row '+(lit?'done':i>0?'locked':'')+'">';
+    html+='<div class="edu-emo">'+s.emoji+'</div>';
+    html+='<div><div class="edu-title">'+s.title+'</div><div class="edu-sub">'+s.desc+'</div></div>';
+    html+='<div class="edu-pts">'+(lit?'&#10003;':s.pts+'pts')+'</div>';
+    html+='</div>';
+  }
+  document.getElementById('edu-list').innerHTML=html;
 }
 
-const EDU = [
-  {title:'Novice',desc:'You understand what stocks are and why prices move. You can read a basic quote.',skills:['Price','Market Cap','P/E Ratio','Ticker Symbol'],pts:0},
-  {title:'Beginner',desc:'You read earnings, understand revenue vs profit, and know what a balance sheet means.',skills:['EPS','Revenue Growth','Gross Margin','Guidance'],pts:15},
-  {title:'Intermediate',desc:'You analyze technicals, read SEC filings, track institutional ownership, and understand options.',skills:['Technical Analysis','10-K/10-Q','Institutional Flow','IV Rank'],pts:35},
-  {title:'Advanced',desc:'You build full investment theses, model valuations, track dark pool activity, and manage position risk.',skills:['DCF Modeling','Moat Analysis','Dark Pool','R/R Sizing'],pts:65},
-  {title:'Expert',desc:'You think in risk-adjusted returns, build portfolio narratives, and generate original due diligence.',skills:['Portfolio Construction','Alpha Generation','Macro Overlay','Short Thesis'],pts:90}
-];
-
-function renderEdu() {
-  setHTML('edu-path', EDU.map((s,i)=>{
-    const lit = skillPts >= s.pts;
-    const isCur = SKILL_LEVELS.findIndex(l=>skillPts>=l.min)===i;
-    const cls = !lit?'locked':isCur&&i<4?'cur':'lit';
-    return `<div class="edu-item ${cls}"><div class="edu-num">0${i+1}</div><div><div class="edu-title">${san(s.title)}${lit?' ✓':''}</div><div class="edu-desc">${san(s.desc)}</div><div class="edu-skills">${s.skills.map(sk=>`<span class="edu-sk">${san(sk)}</span>`).join('')}</div>${!lit?`<div class="hint">Unlocks at ${s.pts} pts · You have ${Math.round(skillPts)}</div>`:''}</div></div>`;
-  }).join(''));
+// ── FEEDBACK ──────────────────────────────────────────────────────────
+function setStar(n){
+  fbRating=n;
+  document.querySelectorAll('.fb-star').forEach(function(s,i){s.classList.toggle('lit',i<n);});
+}
+function toggleChip(el){el.classList.toggle('sel');}
+function submitFeedback(){
+  var chips=[].slice.call(document.querySelectorAll('.fb-chip.sel')).map(function(c){return c.textContent;});
+  var txt=document.getElementById('fb-txt').value.trim();
+  if(!fbRating){toast('Please rate first ⭐','#fbbf24');return;}
+  console.log('Feedback',{rating:fbRating,chips:chips,txt:txt,searches:searches.slice(0,5),ts:new Date().toISOString()});
+  document.getElementById('fb-sent').style.display='block';
+  document.querySelector('.fb-submit').style.display='none';
+  addSP(8);
+  toast('Thank you for your feedback!');
 }
 
-// ── TOASTS ────────────────────────────────────────────────────────────
-function toast(msg, bg='#c8f135') {
-  const wrap = document.getElementById('toast-wrap');
-  const el = document.createElement('div');
-  el.className = 'tst';
-  el.style.background = bg;
-  el.style.color = bg==='#c8f135'?'#09090b':'#fff';
-  el.textContent = msg;
+// ── SHARE ─────────────────────────────────────────────────────────────
+function shareLinkedIn(){
+  var txt='🚨 This free AI tool changed how I research stocks.\n\nPick your AI (Claude/ChatGPT/Gemini/Perplexity), pick your analyst persona (8 styles from beginner to hedge fund), enter a ticker — get a complete institutional-grade analysis in seconds.\n\n8 analyst personas:\n🏛️ Institutional Analyst (Goldman Sachs style)\n🧓 Value Investor (Buffett/Munger lens)\n📈 Momentum Trader (technical entries)\n🐻 Contrarian Bear (maximum skepticism)\n🤖 Quantitative (pure data, factor scores)\n🌱 Learn Mode (beginner-friendly)\n💰 Income Investor (dividend focus)\n🎯 Catalyst Hunter (event-driven)\n\n100% free. No login. No API key. No ads.\n\n🔗 patluri9.github.io/institutional-stock-analyst-prompt\n\n#investing #stocks #AI #stockmarket #finance';
+  navigator.clipboard.writeText(txt).then(function(){toast('LinkedIn post copied! Ready to paste.');});
+  window.open('https://www.linkedin.com','_blank','noopener');
+}
+function shareTweet(){
+  var txt=encodeURIComponent('🚨 Free stock research tool — no login needed.\n\n8 analyst personas × Claude/ChatGPT/Gemini = institutional research for everyone:\n\n🏛️ Hedge fund analyst\n🧓 Buffett value style\n📈 Momentum trader\n🐻 Contrarian bear\n🤖 Quantitative\n🌱 Beginner-friendly\n\npatluri9.github.io/institutional-stock-analyst-prompt\n\n#stocks #investing #AI');
+  window.open('https://x.com/intent/tweet?text='+txt,'_blank','noopener');
+}
+function copyLink(){
+  navigator.clipboard.writeText('https://patluri9.github.io/institutional-stock-analyst-prompt').then(function(){toast('Link copied!');});
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function esc(str){
+  if(typeof str!=='string')return '';
+  var d=document.createElement('div');
+  d.textContent=str;
+  return d.innerHTML;
+}
+function toast(msg,bg){
+  bg=bg||'#c8f135';
+  var wrap=document.getElementById('toast-wrap');
+  var el=document.createElement('div');
+  el.className='tst';
+  el.style.background=bg;
+  el.style.color=bg==='#c8f135'?'#09090b':'#fff';
+  el.textContent=msg;
   wrap.appendChild(el);
-  setTimeout(()=>el.classList.add('show'),10);
-  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),400); },3000);
+  setTimeout(function(){el.classList.add('show');},10);
+  setTimeout(function(){el.classList.remove('show');setTimeout(function(){el.remove();},400);},3200);
 }
 </script>
 </body>
